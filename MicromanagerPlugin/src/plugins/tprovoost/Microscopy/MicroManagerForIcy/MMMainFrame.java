@@ -88,11 +88,9 @@ import org.micromanager.utils.PropertyItem;
 import org.micromanager.utils.ReportingUtils;
 import org.micromanager.utils.StateItem;
 
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.AcqControlDlg;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.AutofocusManager;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigButtonsPanel;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigGroupPad;
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.MMAcquisitionEngineMT;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.PropertyEditor;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.StageMover;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.ColorEditor;
@@ -115,15 +113,11 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	/** Singleton pattern for this window */
 	static MMMainFrame _singleton;
 	/** Reference to core */
-	private static MicroscopeCore core = null;
+	private static MicroscopeCore mCore = null;
 	/** Is the MMMainFrame instanced ? */
 	private static boolean instanced = false;
 	/** Is the MMMainFrame currently instancing ? */
 	private static boolean instancing = false;
-	/** Acquisition Panel for multi-D acquisition */
-	private AcqControlDlg _acqdialog;
-	/** Engine for multi-d acquisition */
-	private MMAcquisitionEngineMT _engine;
 	/** AutofocusManager for multi-d acquisition */
 	private AutofocusManager _afMgr;
 	/** Position list for multi-d acquisition */
@@ -162,6 +156,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	/** Used to know if the application can exit or not. */
 	AcceptListener acceptListener;
 	JTable painterTable;
+	AdvancedConfigurationDialog advancedDlg;
 
 	// ------------
 	// PREFERENCES
@@ -203,8 +198,12 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	private JComboBox _comboBitDepth;
 	/** Size of a single icon in the menu. */
 	private static final int MENU_ICON_SIZE = 20;
-	/** Contains the int value of the shortcut depending on the current platform. */
+	/**
+	 * Contains the int value of the shortcut depending on the current platform.
+	 */
 	private static final int SHORTCUTKEY_MASK = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+	private static final String PREFS_FB_GROUP = "filterBlock";
+	private static final String PREFS_OT_GROUP = "objectiveTurret";
 
 	// CONFIG PART
 	/** Container for configuration. */
@@ -281,11 +280,11 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						// --------------------
 						if (_progressBar != null)
 							getContentPane().remove(_progressBar);
-						if (core == null) {
+						if (mCore == null) {
 							close();
 							return;
 						}
-						_afMgr = new AutofocusManager(core);
+						_afMgr = new AutofocusManager(mCore);
 						PositionList posList = new PositionList();
 
 						_camera_label = MMCoreJ.getG_Keyword_CameraName();
@@ -296,7 +295,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						} catch (MMScriptException e1) {
 							e1.printStackTrace();
 						}
-						posListDlg_ = new PositionListDlg(core, MMMainFrame.this, _posList, null);
+						posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
 						posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 
 						setSystemMenuCallback(new MenuCallback() {
@@ -341,12 +340,12 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 								JMenuItem menuPxSizeConfigItem = new JMenuItem("Pixel Size Config");
 								menuPxSizeConfigItem.setIcon(new IcyIcon("link", MENU_ICON_SIZE));
-								menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G,InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+								menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
 								menuPxSizeConfigItem.addActionListener(new ActionListener() {
 
 									@Override
 									public void actionPerformed(ActionEvent e) {
-										CalibrationListDlg dlg = new CalibrationListDlg(core);
+										CalibrationListDlg dlg = new CalibrationListDlg(mCore);
 										dlg.setDefaultCloseOperation(2);
 										dlg.setParentGUI(MMMainFrame.this);
 										dlg.setVisible(true);
@@ -354,15 +353,15 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 											@Override
 											public void windowClosed(WindowEvent e) {
 												super.windowClosed(e);
-												notifyPluginsConfigChanged(null);
+												notifyConfigChanged(null);
 											}
 										});
-										notifyPluginsConfigAboutToChange(null);
+										notifyConfigAboutToChange(null);
 									}
 								});
 
 								JMenuItem loadConfigItem = new JMenuItem("Load Configuration");
-								loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+								loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
 								loadConfigItem.setIcon(new IcyIcon("folder_open", MENU_ICON_SIZE));
 								loadConfigItem.addActionListener(new ActionListener() {
 
@@ -374,7 +373,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 									}
 								});
 								JMenuItem saveConfigItem = new JMenuItem("Save Configuration");
-								saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+								saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
 								saveConfigItem.setIcon(new IcyIcon("save", MENU_ICON_SIZE));
 								saveConfigItem.addActionListener(new ActionListener() {
 
@@ -391,14 +390,13 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 									 */
 									@Override
 									public void actionPerformed(ActionEvent e) {
-										// TODO
-										System.out.println("Advanced Config");
-										new ToolTipFrame("<html><h3>About Advanced Config</h3><p>Advanced Configuration is a tool" +
-												"in which you fill some data <br/>about your configuration that some " +
-												"plugins may need to access to.<br/> Exemple: the real values of the magnification" +
-												"of your objectives.</p></html>", "MM4IcyAdvancedConfig");
-										AdvancedConfigPlugin acp = new AdvancedConfigPlugin();
-										acp.start();
+										new ToolTipFrame("<html><h3>About Advanced Config</h3><p>Advanced Configuration is a tool"
+												+ "in which you fill some data <br/>about your configuration that some "
+												+ "plugins may need to access to.<br/> Exemple: the real values of the magnification" + "of your objectives.</p></html>", "MM4IcyAdvancedConfig");
+										if (advancedDlg == null)
+											advancedDlg = new AdvancedConfigurationDialog();
+										advancedDlg.setVisible(!advancedDlg.isVisible());
+										advancedDlg.setLocationRelativeTo(mainFrame);
 									}
 								});
 								JMenuItem loadPresetConfigItem = new JMenuItem("Load Configuration Presets");
@@ -407,9 +405,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 									@Override
 									public void actionPerformed(ActionEvent e) {
-										notifyPluginsConfigAboutToChange(null);
+										notifyConfigAboutToChange(null);
 										loadPresets();
-										notifyPluginsConfigChanged(null);
+										notifyConfigChanged(null);
 									}
 								});
 								JMenuItem savePresetConfigItem = new JMenuItem("Save Configuration Presets");
@@ -480,7 +478,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 									}
 								});
 								JMenuItem propertyBrowserItem = new JMenuItem("Property Browser");
-								propertyBrowserItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA,SHORTCUTKEY_MASK));
+								propertyBrowserItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA, SHORTCUTKEY_MASK));
 								propertyBrowserItem.setIcon(new IcyIcon("db", MENU_ICON_SIZE));
 								propertyBrowserItem.addActionListener(new ActionListener() {
 
@@ -511,10 +509,10 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						// SETUP
 						_groupPad = new ConfigGroupPad(MMMainFrame.this);
 						_groupPad.setFont(new Font("", 0, 10));
-						_groupPad.setCore(core);
+						_groupPad.setCore(mCore);
 						_groupPad.setParentGUI(MMMainFrame.this);
 						_groupButtonsPanel = new ConfigButtonsPanel();
-						_groupButtonsPanel.setCore(core);
+						_groupButtonsPanel.setCore(mCore);
 						_groupButtonsPanel.setGUI(MMMainFrame.this);
 						_groupButtonsPanel.setConfigPad(_groupPad);
 
@@ -532,8 +530,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 						_txtExposure = new JTextField();
 						try {
-							core.setExposure(90.0D);
-							_txtExposure.setText(String.valueOf(core.getExposure()));
+							mCore.setExposure(90.0D);
+							_txtExposure.setText(String.valueOf(mCore.getExposure()));
 						} catch (Exception e2) {
 							_txtExposure.setText("90");
 						}
@@ -565,7 +563,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 							public void actionPerformed(ActionEvent arg0) {
 								try {
 									if (_combo_shutters.getSelectedItem() != null) {
-										core.setShutterDevice((String) _combo_shutters.getSelectedItem());
+										mCore.setShutterDevice((String) _combo_shutters.getSelectedItem());
 										_prefs.put(PREF_SHUTTER, (String) _combo_shutters.getItemAt(_combo_shutters.getSelectedIndex()));
 									}
 								} catch (Exception e) {
@@ -710,7 +708,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						// will refresh the data and verify if any change
 						// occurs.
 						editor = new PropertyEditor(MMMainFrame.this);
-						editor.setCore(core);
+						editor.setCore(mCore);
 						editor.addToMainDesktopPane();
 						editor.refresh();
 						editor.start();
@@ -776,13 +774,13 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 */
 	private void loadConfig() {
 		_isConfigLoaded = false;
-		if (core != null) {
+		if (mCore != null) {
 			if (!ConfirmDialog.confirm("Are you sure ", "Do you want to load another configuration ?")) {
 				return;
 			}
-			if (core.isSequenceRunning()) {
+			if (mCore.isSequenceRunning()) {
 				try {
-					core.stopSequenceAcquisition();
+					mCore.stopSequenceAcquisition();
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
@@ -797,8 +795,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				}
 			}
 			try {
-				core.unloadAllDevices();
-				core.reset();
+				mCore.unloadAllDevices();
+				mCore.reset();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -817,7 +815,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			public void run() {
 				loadCMMCore(_sysConfigFile);
 				_progressFrame.setVisible(false);
-				if (core == null) {
+				if (mCore == null) {
 					if (ConfirmDialog.confirm("Error while launching", "Do you want to load another configuration ?")) {
 						ThreadUtil.invokeLater(new Runnable() {
 							@Override
@@ -846,16 +844,14 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				}
 			}
 		});
-		if (_acqdialog != null)
-			_acqdialog.updateGroupsCombo();
 	}
 
 	/**
 	 * load configuration file for the core
 	 */
 	void loadCMMCore(String path) {
-		core = MicroscopeCore.getCore();
-		if (core == null) {
+		mCore = MicroscopeCore.getCore();
+		if (mCore == null) {
 			ThreadUtil.invokeNow(new Runnable() {
 				@Override
 				public void run() {
@@ -870,14 +866,14 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		 * core.shutdownLogging();
 		 */
 		try {
-			core.loadSystemConfiguration(path);
+			mCore.loadSystemConfiguration(path);
 			try {
-				StrVector pxSizeConfigs = core.getAvailablePixelSizeConfigs();
+				StrVector pxSizeConfigs = mCore.getAvailablePixelSizeConfigs();
 				if (!(pxSizeConfigs.size() >= 1))
 					throw new Exception();
 			} catch (Exception e) {
-				core.definePixelSizeConfig("ResDefault");
-				core.setPixelSizeUm("ResDefault", 1.0);
+				mCore.definePixelSizeConfig("ResDefault");
+				mCore.setPixelSizeUm("ResDefault", 1.0);
 			}
 			ThreadUtil.invokeLater(new Runnable() {
 
@@ -885,9 +881,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				public void run() {
 					{
 						if (_groupPad != null)
-							_groupPad.setCore(core);
+							_groupPad.setCore(mCore);
 						if (_groupButtonsPanel != null)
-							_groupButtonsPanel.setCore(core);
+							_groupButtonsPanel.setCore(mCore);
 					}
 				}
 			});
@@ -914,7 +910,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 					}
 				});
 			}
-			core = null;
+			mCore = null;
 		}
 	}
 
@@ -933,6 +929,21 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		_cbAbsoluteHisto.setSelected(_prefs.getBoolean(PREF_ABS_HIST, false));
 		_comboBitDepth.setEnabled(_cbAbsoluteHisto.isSelected());
 		_comboBitDepth.setSelectedIndex(_prefs.getInt(PREF_BITDEPTH, 0));
+		mCore.setCurrentFilterBlockGroup(_prefs.get(PREFS_FB_GROUP, null));
+		String currentObjective = _prefs.get(PREFS_OT_GROUP, null);
+		if (currentObjective != null) {
+			HashMap<String, Double> hashMag = new HashMap<String, Double>();
+			XMLPreferences nodeObjective = _prefs.node(currentObjective);
+			for (String key : nodeObjective.keys()) {
+				String value = nodeObjective.get(key, null);
+				try {
+					hashMag.put(key, Double.parseDouble(value));
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+			}
+			mCore.setCurrentObjectiveTurretGroup(currentObjective, hashMag);
+		}
 	}
 
 	/**
@@ -1001,8 +1012,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		MicroscopeModel model = new MicroscopeModel();
 		try {
 			model.loadFromFile(_sysConfigFile);
-			model.createSetupConfigsFromHardware(core);
-			model.createResolutionsFromHardware(core);
+			model.createSetupConfigsFromHardware(mCore);
+			model.createResolutionsFromHardware(mCore);
 			JFileChooser fc = new JFileChooser();
 			boolean saveFile = true;
 			File f;
@@ -1039,20 +1050,20 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 */
 	private void changeBinning() {
 		try {
-			notifyPluginsConfigAboutToChange(null);
+			notifyConfigAboutToChange(null);
 			boolean bWasRunning;
-			if (bWasRunning = core.isSequenceRunning())
-				core.stopSequenceAcquisition();
+			if (bWasRunning = mCore.isSequenceRunning())
+				mCore.stopSequenceAcquisition();
 
 			if (_camera_label.length() > 0) {
 				Object item = _combo_binning.getSelectedItem();
 				if (item != null) {
-					core.setProperty(_camera_label, MMCoreJ.getG_Keyword_Binning(), item.toString());
+					mCore.setProperty(_camera_label, MMCoreJ.getG_Keyword_Binning(), item.toString());
 				}
 			}
-			notifyPluginsConfigChanged(null);
+			notifyConfigChanged(null);
 			if (bWasRunning)
-				core.startContinuousSequenceAcquisition(0.0D);
+				mCore.startContinuousSequenceAcquisition(0.0D);
 		} catch (Exception e) {
 			ReportingUtils.showError(e);
 		}
@@ -1063,23 +1074,23 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 */
 	private void setExposure() {
 
-		notifyPluginsConfigAboutToChange(null);
+		notifyConfigAboutToChange(null);
 		Double test = Double.valueOf(_txtExposure.getText());
 		if (test == null) {
 			try {
-				core.setExposure(10);
+				mCore.setExposure(10);
 			} catch (Exception e) {
 			}
 		} else {
 			try {
-				core.setExposure(test.doubleValue());
-				double exposure = core.getExposure();
+				mCore.setExposure(test.doubleValue());
+				double exposure = mCore.getExposure();
 				_txtExposure.setText("" + exposure);
 				_prefs.put(PREF_EXPOSURE, "" + exposure);
 			} catch (Exception exp) {
 			}
 		}
-		notifyPluginsConfigChanged(null);
+		notifyConfigChanged(null);
 	}
 
 	@Override
@@ -1088,7 +1099,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			if (!ConfirmDialog.confirm("Some plugins are still running. Are you sure you want to close this ?"))
 				return;
 		}
-		painterPreferences.saveColors();
+		if (painterPreferences != null)
+			painterPreferences.saveColors();
 		_pluginListEmpty = true;
 		if (editor != null)
 			editor.stop();
@@ -1102,10 +1114,24 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 	@Override
 	public void onClosed() {
-		if (core != null) {
-			if (core.isSequenceRunning())
+		String filterBlockGroup = mCore.getCurrentFilterBlockGroup();
+		if (filterBlockGroup != null)
+			_prefs.put(PREFS_FB_GROUP, filterBlockGroup);
+		String objectiveTuretGroup = mCore.getCurrentObjectiveTurretGroup();
+		if (objectiveTuretGroup != null) {
+			_prefs.put(PREFS_OT_GROUP, objectiveTuretGroup);
+			HashMap<String, Double> hashMag = mCore.getAvailableMagnifications();
+			if (hashMag != null) {
+				XMLPreferences nodeObjectiveTurret = _prefs.node(objectiveTuretGroup);
+				for (String currentKey : hashMag.keySet()) {
+					nodeObjectiveTurret.put(currentKey, "" + hashMag.get(currentKey));
+				}
+			}
+		}
+		if (mCore != null) {
+			if (mCore.isSequenceRunning())
 				try {
-					core.stopSequenceAcquisition();
+					mCore.stopSequenceAcquisition();
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
@@ -1114,11 +1140,11 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 					_list_plugin.get(i).MainGUIClosed();
 			}
 			try {
-				core.unloadAllDevices();
+				mCore.unloadAllDevices();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			core = null;
+			mCore = null;
 		}
 		dispose();
 		super.onClosed();
@@ -1214,26 +1240,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	public void enableLiveMode(boolean flag) {
 	}
 
-	/**
-	 * Initiate the engine with the current configuration.
-	 * */
-	public void initEngine(MMAcquisitionEngineMT engine) {
-		_engine = engine;
-		engine.setParentGUI(this);
-		engine.setCore(core, _afMgr);
-		engine.setPositionList(_posList);
-		engine.setZStageDevice(core.getFocusDevice());
-	}
-
-	/**
-	 * Getter of _engine.
-	 * 
-	 * @return Returns the _engine value.
-	 */
-	public MMAcquisitionEngineMT getEngine() {
-		return _engine;
-	}
-
 	@Override
 	public org.micromanager.utils.AutofocusManager getAutofocusManager() {
 		return null;
@@ -1252,16 +1258,14 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 			@Override
 			public void run() {
-				_camera_label = core.getCameraDevice();
-				if (_engine != null)
-					_engine.setZStageDevice(core.getFocusDevice());
+				_camera_label = mCore.getCameraDevice();
 				if (_camera_label.length() > 0) {
 					if (_combo_binning.getItemCount() > 0) {
 						_combo_binning.removeAllItems();
 					}
 					StrVector binSizes;
 					try {
-						binSizes = core.getAllowedPropertyValues(_camera_label, MMCoreJ.getG_Keyword_Binning());
+						binSizes = mCore.getAllowedPropertyValues(_camera_label, MMCoreJ.getG_Keyword_Binning());
 					} catch (Exception e1) {
 						binSizes = new StrVector();
 					}
@@ -1285,7 +1289,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 					_combo_binning.setSelectedIndex(0);
 				}
 				try {
-					_shutters = core.getLoadedDevicesOfType(DeviceType.ShutterDevice);
+					_shutters = mCore.getLoadedDevicesOfType(DeviceType.ShutterDevice);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -1311,7 +1315,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 					for (int i = 0; i < listeners.length; i++)
 						_combo_shutters.addActionListener(listeners[i]);
 
-					String activeShutter = core.getShutterDevice();
+					String activeShutter = mCore.getShutterDevice();
 					if (activeShutter != null)
 						_combo_shutters.setSelectedItem(activeShutter);
 					else {
@@ -1410,9 +1414,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			return;
 		_configChanged_ = status;
 		setConfigSaveButtonStatus(_configChanged_);
-		if (_acqdialog != null)
-			_acqdialog.updateGroupsCombo();
-		notifyPluginsConfigChanged(null);
+		notifyConfigChanged(null);
 	}
 
 	protected void setConfigSaveButtonStatus(boolean changed) {
@@ -1423,11 +1425,16 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	public void setPositionList(PositionList positionlist) throws MMScriptException {
 		_posList = PositionList.newInstance(positionlist);
 	}
+	
+	public PositionList getPositionList() {
+		return _posList;
+	}
+
 
 	@Override
 	public void showXYPositionList() {
 		if (posListDlg_ == null) {
-			posListDlg_ = new PositionListDlg(core, this, _posList, null);
+			posListDlg_ = new PositionListDlg(mCore, this, _posList, null);
 			posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 		}
 		posListDlg_.setVisible(true);
@@ -1456,7 +1463,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			if (_groupPad != null)
 				_groupPad.refreshStructure();
 			try {
-				_txtExposure.setText("" + core.getExposure());
+				_txtExposure.setText("" + mCore.getExposure());
 			} catch (Exception e) {
 			}
 		}
@@ -1564,9 +1571,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			return;
 		if (!_isConfigLoaded)
 			return;
-		if (!core.isSequenceRunning()) {
+		if (!mCore.isSequenceRunning()) {
 			try {
-				core.startContinuousSequenceAcquisition(0.0D);
+				mCore.startContinuousSequenceAcquisition(0.0D);
 				_list_progress.add(continuousProgress);
 				refreshGUI();
 			} catch (Exception e1) {
@@ -1593,7 +1600,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		_plugin_contAcq_list.remove(o);
 		if (_plugin_contAcq_list.isEmpty()) {
 			try {
-				core.stopSequenceAcquisition();
+				mCore.stopSequenceAcquisition();
 				_list_progress.remove(continuousProgress);
 				refreshGUI();
 			} catch (Exception e) {
@@ -1653,7 +1660,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 */
 	public void notifyAcquisitionOver(MicroscopePluginAcquisition plugin) {
 		if (plugin != null) {
-			int idx = indexOf(plugin);
+			int idx = indexOfPlugin(plugin);
 			if (idx >= 0)
 				_list_progress.remove(idx);
 			refreshGUI();
@@ -1669,9 +1676,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 * @see #notifyAcquisitionOver(MicroscopePluginAcquisition)
 	 */
 	public void notifyProgress(MicroscopePluginAcquisition plugin, int progress) {
-		int idx = indexOf(plugin);
+		int idx = indexOfPlugin(plugin);
 		if (idx >= 0)
-			_list_progress.get(indexOf(plugin)).setProgress(progress);
+			_list_progress.get(indexOfPlugin(plugin)).setProgress(progress);
 		refreshGUI();
 	}
 
@@ -1685,7 +1692,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 * @param item
 	 *            : item which is going to change.
 	 */
-	public void notifyPluginsConfigAboutToChange(StateItem item) {
+	public void notifyConfigAboutToChange(StateItem item) {
 		if (!instanced)
 			return;
 		if (!_isConfigLoaded)
@@ -1719,24 +1726,59 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 * @param item
 	 *            : item changed.
 	 */
-	public void notifyPluginsConfigChanged(StateItem item) {
+	public void notifyConfigChanged(final StateItem item) {
 		if (!instanced)
 			return;
 		if (!_isConfigLoaded)
 			return;
-		ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
-		for (MicroscopePlugin p : _list_plugin) {
-			try {
-				p.notifyConfigChanged(item);
-			} catch (Exception e) {
-				e.printStackTrace();
-				todeletelist.add(p);
+		if (advancedDlg != null && (advancedDlg.waitingForObjectiveChange || advancedDlg.waitingForBlockChange)) {
+			ThreadUtil.bgRun(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						Thread.sleep(800);
+					} catch (InterruptedException e) {
+					}
+					ThreadUtil.invokeNow(new Runnable() {
+						@Override
+						public void run() {
+							if (advancedDlg.waitingForObjectiveChange) {
+								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group + "</b></div>   as your Objective Turret configuration ?</html>")) {
+									mCore.setCurrentObjectiveTurretGroup(item.group);
+									String res = mCore.getCurrentObjectiveTurretGroup();
+									if (res != null)
+										advancedDlg.lblCurrentObjectiveTurretGroup.setText("<html><b>"+ res + "</b></html>");
+								}
+								advancedDlg.waitingForObjectiveChange = false;
+							} else if (advancedDlg.waitingForBlockChange) {
+								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group + "</b></div>  as your Filter Block configuration ?</html>")) {
+									mCore.setCurrentFilterBlockGroup(item.group);
+									String res = mCore.getCurrentFilterBlockGroup();
+									if (res != null)
+										advancedDlg.lblCurrentFilterBLockGroup.setText("<html><b>"+ res + "</b></html>");
+								}
+								advancedDlg.waitingForBlockChange = false;
+							}
+						}
+					});
+				}
+			});
+		} else {
+			ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
+			for (MicroscopePlugin p : _list_plugin) {
+				try {
+					p.notifyConfigChanged(item);
+				} catch (Exception e) {
+					e.printStackTrace();
+					todeletelist.add(p);
+				}
 			}
+			for (MicroscopePlugin p : todeletelist) {
+				_list_plugin.remove(p);
+			}
+			updateGUI(true);
 		}
-		for (MicroscopePlugin p : todeletelist) {
-			_list_plugin.remove(p);
-		}
-		updateGUI(true);
 	}
 
 	/**
@@ -1746,7 +1788,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 *            : plugin to find
 	 * @return Returns the index if existing, -1 if not existing or null.
 	 */
-	private int indexOf(MicroscopePluginAcquisition plugin) {
+	private int indexOfPlugin(MicroscopePluginAcquisition plugin) {
 		if (plugin != null) {
 			for (int i = 0; i < _list_progress.size(); ++i) {
 				if (plugin != null && _list_progress.get(i).plugin == plugin)
@@ -1903,18 +1945,18 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 *            : file and node where data is saved.
 	 */
 	private void saveToXML(XMLPreferences root) {
-		StrVector devices = core.getLoadedDevices();
+		StrVector devices = mCore.getLoadedDevices();
 		for (int i = 0; i < devices.size(); i++) {
 			XMLPreferences prefs = root.node(devices.get(i));
 			StrVector properties;
 			try {
-				properties = core.getDevicePropertyNames(devices.get(i));
+				properties = mCore.getDevicePropertyNames(devices.get(i));
 			} catch (Exception e) {
 				continue;
 			}
 			for (int j = 0; j < properties.size(); j++) {
 				PropertyItem item = new PropertyItem();
-				item.readFromCore(core, devices.get(i), properties.get(j));
+				item.readFromCore(mCore, devices.get(i), properties.get(j));
 				prefs.put(properties.get(j), item.value);
 			}
 		}
@@ -1932,8 +1974,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				String value = device.get(propName, "");
 				if (value != "") {
 					try {
-						core.setProperty(device.name(), propName, value);
-						core.waitForSystem();
+						mCore.setProperty(device.name(), propName, value);
+						mCore.waitForSystem();
 					} catch (Exception e) {
 						continue;
 					}
@@ -1950,6 +1992,99 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		@SuppressWarnings("unused")
 		public ColorLabel(String colorName) {
 			super(painterPreferences.getColor(colorName));
+		}
+	}
+
+	private class AdvancedConfigurationDialog extends JDialog {
+
+		private boolean waitingForObjectiveChange = false;
+		private boolean waitingForBlockChange = false;
+
+		/** */
+		private static final long serialVersionUID = 1L;
+		JLabel lblCurrentObjectiveTurretGroup;
+		JLabel lblCurrentFilterBLockGroup;
+
+		public AdvancedConfigurationDialog() {
+			super(Icy.getMainInterface().getFrame(), "Advanced Configuration Dialog", false);
+
+			JPanel panelDevices = new JPanel(new GridLayout(2, 3));
+			panelDevices.setBorder(BorderFactory.createEmptyBorder(20, 10, 10, 10));
+
+			// OBJECTIVES TURRET
+			panelDevices.add(new JLabel("Objectives Turret Config: "));
+			lblCurrentObjectiveTurretGroup = new JLabel("");
+			String turretGroup = mCore.getCurrentObjectiveTurretGroup();
+			if (turretGroup != null)
+				lblCurrentObjectiveTurretGroup.setText("<html><b>" + turretGroup + "</b><html>");
+			lblCurrentObjectiveTurretGroup.setHorizontalAlignment(SwingConstants.CENTER);
+			panelDevices.add(lblCurrentObjectiveTurretGroup);
+			JButton btnSetTurretConfig = new JButton("Set");
+			btnSetTurretConfig.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					MessageDialog.showDialog("<html>Please modify the preset of the objective turret's group.<br/>" + "<br/><i>Exemple: switch from 10x to 20x.</i></html>");
+					if (waitingForBlockChange)
+						waitingForBlockChange = false;
+					waitingForObjectiveChange = true;
+				}
+			});
+			panelDevices.add(btnSetTurretConfig);
+
+			// FILTER BLOCKS
+			panelDevices.add(new JLabel("Filter Blocks Config: "));
+			lblCurrentFilterBLockGroup = new JLabel("");
+			String filterBlock = mCore.getCurrentFilterBlockGroup();
+			if (filterBlock != null)
+				lblCurrentFilterBLockGroup.setText("<html><b>" + filterBlock + "</b><html>");
+			lblCurrentFilterBLockGroup.setHorizontalAlignment(SwingConstants.CENTER);
+			panelDevices.add(lblCurrentFilterBLockGroup);
+			JButton btnSetFilterBlock = new JButton("Set");
+			btnSetFilterBlock.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					MessageDialog.showDialog("<html>Please modify the preset of the filter block's group.<br/>" + "<br/><i>Exemple: switch from GFP to Texas Red.</i></html>");
+					if (waitingForObjectiveChange)
+						waitingForObjectiveChange = false;
+					waitingForBlockChange = true;
+				}
+			});
+			panelDevices.add(btnSetFilterBlock);
+
+			JPanel mainPanel = new JPanel(new BorderLayout());
+			JButton btnClose = new JButton("Close");
+			btnClose.setSize(30, 20);
+			btnClose.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					setVisible(false);
+				}
+			});
+			JPanel panelClose = new JPanel();
+			panelClose.setLayout(new BoxLayout(panelClose, BoxLayout.X_AXIS));
+			panelClose.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+			panelClose.add(Box.createHorizontalGlue());
+			panelClose.add(btnClose);
+			panelClose.add(Box.createHorizontalGlue());
+
+			mainPanel.add(panelDevices, BorderLayout.CENTER);
+			mainPanel.add(panelClose, BorderLayout.SOUTH);
+			setLayout(new BorderLayout());
+			add(new IcyLogo("Advanced Configuration Dialog"), BorderLayout.NORTH);
+			add(mainPanel, BorderLayout.CENTER);
+			pack();
+			addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent e) {
+					int vk = e.getKeyCode();
+					if (vk == KeyEvent.VK_ENTER || vk == KeyEvent.VK_ESCAPE) {
+						setVisible(false);
+					}
+				}
+			});
 		}
 	}
 }

@@ -165,7 +165,7 @@ public class ConfigGroupPad extends JScrollPane {
 				try {
 					if (value != null && value.toString().length() > 0) {
 						if (parentGUI_ != null)
-							parentGUI_.notifyPluginsConfigAboutToChange(item);
+							parentGUI_.notifyConfigAboutToChange(item);
 						boolean wasRunning;
 						if (wasRunning = core_.isSequenceRunning())
 							core_.stopSequenceAcquisition();
@@ -218,7 +218,7 @@ public class ConfigGroupPad extends JScrollPane {
 						if (wasRunning)
 							core_.startContinuousSequenceAcquisition(0.0D);
 						if (parentGUI_ != null)
-							parentGUI_.notifyPluginsConfigChanged(item);
+							parentGUI_.notifyConfigChanged(item);
 					}
 				} catch (Exception e) {
 					handleException(e);

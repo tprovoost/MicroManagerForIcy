@@ -247,7 +247,7 @@ public class ConfigDialog extends MMDialog {
 	}
 
 	public void okChosen() {
-		_gui.notifyPluginsConfigChanged(null);
+		_gui.notifyConfigChanged(null);
 	}
 
 	public void cancelChosen() {
@@ -260,7 +260,7 @@ public class ConfigDialog extends MMDialog {
 		_gui.refreshGUI();
 		if (_gui instanceof MMMainFrame)
 			((MMMainFrame) _gui).selectConfigGroup(groupName_);
-		_gui.notifyPluginsConfigChanged(null);
+		_gui.notifyConfigChanged(null);
 	}
 
 	public void update() {

@@ -32,7 +32,7 @@ public class ImageGetter {
 			/* Core Function */
 			if (core.getBytesPerPixel() == 1 || core.getBytesPerPixel() == 2) {
 				core.snapImage();
-				short[] img = Array1DUtil.arrayToShortArray(core.getImage(), false);
+				short[] img = Array1DUtil.arrayToShortArray(core.getImage(),false);
 				int width = (int) core.getImageWidth();
 				int height = (int) core.getImageHeight();
 				if (width == 0 || height == 0)

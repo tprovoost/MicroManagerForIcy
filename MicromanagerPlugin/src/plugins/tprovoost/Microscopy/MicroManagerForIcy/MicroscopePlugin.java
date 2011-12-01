@@ -74,7 +74,7 @@ public abstract class MicroscopePlugin extends Plugin implements PluginImageAnal
 	 * notified.
 	 */
 	protected void notifyMainGuiConfigAboutToChange() {
-		mainGui.notifyPluginsConfigAboutToChange(null);
+		mainGui.notifyConfigAboutToChange(null);
 	}
 
 	/**
@@ -83,7 +83,7 @@ public abstract class MicroscopePlugin extends Plugin implements PluginImageAnal
 	 * notified.
 	 */
 	protected void notifyMainGuiConfigChanged() {
-		mainGui.notifyPluginsConfigChanged(null);
+		mainGui.notifyConfigChanged(null);
 		mainGui.configChanged();
 	}
 

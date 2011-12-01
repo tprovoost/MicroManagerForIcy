@@ -18,7 +18,7 @@ public class GroupEditor extends ConfigDialog {
 
 	public GroupEditor(String groupName, String presetName, MMMainFrame gui_, CMMCore core, boolean newItem) {
 		super(groupName, presetName, gui_, core, newItem);
-		gui_.notifyPluginsConfigAboutToChange(null);
+		gui_.notifyConfigAboutToChange(null);
 		instructionsText_ = "Here you can specifiy the properties included\nin a configuration group.";
 		nameFieldLabelText_ = "Group name:";
 		initName_ = this.groupName_;
