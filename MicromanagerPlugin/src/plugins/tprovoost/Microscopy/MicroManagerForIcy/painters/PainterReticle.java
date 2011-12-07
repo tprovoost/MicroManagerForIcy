@@ -1,5 +1,6 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy.painters;
 
+import icy.canvas.Canvas3D;
 import icy.canvas.IcyCanvas;
 import icy.roi.ROI;
 import icy.sequence.Sequence;
@@ -14,6 +15,8 @@ public class PainterReticle extends MicroscopePainter {
 	@Override
 	public void paint(Graphics2D g, Sequence sequence, IcyCanvas canvas) {
 		super.paint(g, sequence, canvas);
+		if ( canvas instanceof Canvas3D)
+			return;
 		int w = sequence.getWidth();
 		int h = sequence.getHeight();
 		int sizew = (int) (ROI.canvasToImageLogDeltaX(canvas, 20));

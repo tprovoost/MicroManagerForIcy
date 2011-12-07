@@ -1,5 +1,6 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy.painters;
 
+import icy.canvas.Canvas3D;
 import icy.canvas.IcyCanvas;
 import icy.image.IcyBufferedImage;
 import icy.roi.ROI;
@@ -50,6 +51,8 @@ public class PainterCoordinates extends MicroscopePainter {
 	@Override
 	public void paint(Graphics2D g, Sequence sequence, IcyCanvas canvas) {
 		super.paint(g, sequence, canvas);
+		if ( canvas instanceof Canvas3D)
+			return;
 		if (xValue.contains("0.0000") && yValue.contains("0.0000") && zValue.contains("0.0000"))
 			return;
 		int w = sequence.getWidth();

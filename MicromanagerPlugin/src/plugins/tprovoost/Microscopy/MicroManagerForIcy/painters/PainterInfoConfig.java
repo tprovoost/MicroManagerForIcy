@@ -1,5 +1,6 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy.painters;
 
+import icy.canvas.Canvas3D;
 import icy.canvas.IcyCanvas;
 import icy.image.IcyBufferedImage;
 import icy.sequence.Sequence;
@@ -23,7 +24,7 @@ public class PainterInfoConfig extends MicroscopePainter {
 
 	@Override
 	public void paint(Graphics2D g, Sequence sequence, IcyCanvas canvas) {
-		if (!displayHelp)
+		if (!displayHelp || canvas instanceof Canvas3D)
 			return;
 		int w = sequence.getWidth();
 		int h = sequence.getHeight();
