@@ -335,7 +335,7 @@ public class MicroscopeCore extends CMMCore {
 	 */
 	public void setCurrentObjectiveTurretGroup(String currentObjectiveTurretGroup) {
 		this.currentObjectiveTurretGroup = currentObjectiveTurretGroup;
-		MainFrame mainFrame = Icy.getMainInterface().getFrame();
+		MainFrame mainFrame = Icy.getMainInterface().getMainFrame();
 		StrVector vector = core.getAvailableConfigs(currentObjectiveTurretGroup);
 		ArrayList<String> objectives = new ArrayList<String>();
 		for (String s : vector) {

@@ -122,7 +122,7 @@ public class IntroPage extends PagePanel {
 	private void loadConfiguration() {
 		JFileChooser fc = new JFileChooser();
 		fc.setFileFilter(new FileNameExtensionFilter("Configuration Files (.cfg)", "cfg"));
-		int returnVal = fc.showDialog(Icy.getMainInterface().getFrame(), "Launch Configuration");
+		int returnVal = fc.showDialog(Icy.getMainInterface().getMainFrame(), "Launch Configuration");
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			filePathField_.setText(fc.getSelectedFile().getAbsolutePath());
 		}

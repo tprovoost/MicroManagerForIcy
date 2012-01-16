@@ -100,7 +100,7 @@ public class FinishPage extends PagePanel {
 		
 		JFileChooser fc = new JFileChooser();
 		fc.setFileFilter(new FileNameExtensionFilter("Configuration Files (.cfg)", "cfg"));
-		int returnVal = fc.showDialog(Icy.getMainInterface().getFrame(), "Launch Configuration");
+		int returnVal = fc.showDialog(Icy.getMainInterface().getMainFrame(), "Launch Configuration");
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			setFilePath(fc.getSelectedFile());
 			this.overwrite_ = true;

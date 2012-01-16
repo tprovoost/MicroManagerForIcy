@@ -2,7 +2,6 @@ package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
 import icy.common.AcceptListener;
 import icy.common.MenuCallback;
-import icy.gui.component.ColorComponent;
 import icy.gui.component.IcyLogo;
 import icy.gui.dialog.ConfirmDialog;
 import icy.gui.dialog.MessageDialog;
@@ -47,7 +46,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -242,7 +240,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		_sysConfigFile = "";
 		_isConfigLoaded = false;
 		_root = IcyPreferences.pluginsRoot().node(NODE_NAME);
-		final MainFrame mainFrame = Icy.getMainInterface().getFrame();
+		final MainFrame mainFrame = Icy.getMainInterface().getMainFrame();
 
 		// --------------
 		// PROGRESS FRAME
@@ -695,7 +693,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						painterTable.setDefaultRenderer(Color.class, new ColorRenderer(true));
 						painterTable.setDefaultEditor(Color.class, new ColorEditor());
 
-						painterTable.setDefaultRenderer(JSlider.class, new SliderRenderer());
+						painterTable.setDefaultRenderer(JSlider.class, new SliderRenderer(0,255));
 						painterTable.setDefaultEditor(JSlider.class, new SliderEditor());
 
 						_panelColorChooser.add(scrollPane);
@@ -904,7 +902,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 					@Override
 					public void run() {
-						JOptionPane.showMessageDialog(Icy.getMainInterface().getFrame().getRootPane(),
+						JOptionPane.showMessageDialog(Icy.getMainInterface().getMainFrame().getRootPane(),
 								"Error while initializing the microscope: please check if all devices are correctly turned on and recognized by the computer and"
 										+ "quit any program using those devices.");
 					}
@@ -952,7 +950,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 * @return Returns the dialog.
 	 */
 	private JDialog createDLLErrorDialog() {
-		MainFrame mainFrame = Icy.getMainInterface().getFrame();
+		MainFrame mainFrame = Icy.getMainInterface().getMainFrame();
 		// Dialog frame to be returned
 		final JDialog dialog = new JDialog(mainFrame, "Loading Error", true);
 
@@ -1108,27 +1106,27 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		onClosed();
 		removeFromMainDesktopPane();
 		setVisible(false);
-		Icy.getMainInterface().getFrame().repaint();
+		Icy.getMainInterface().getMainFrame().repaint();
 		Icy.getMainInterface().removeCanExitListener(acceptListener);
 	}
 
 	@Override
 	public void onClosed() {
-		String filterBlockGroup = mCore.getCurrentFilterBlockGroup();
-		if (filterBlockGroup != null)
-			_prefs.put(PREFS_FB_GROUP, filterBlockGroup);
-		String objectiveTuretGroup = mCore.getCurrentObjectiveTurretGroup();
-		if (objectiveTuretGroup != null) {
-			_prefs.put(PREFS_OT_GROUP, objectiveTuretGroup);
-			HashMap<String, Double> hashMag = mCore.getAvailableMagnifications();
-			if (hashMag != null) {
-				XMLPreferences nodeObjectiveTurret = _prefs.node(objectiveTuretGroup);
-				for (String currentKey : hashMag.keySet()) {
-					nodeObjectiveTurret.put(currentKey, "" + hashMag.get(currentKey));
+		if (mCore != null) {
+			String filterBlockGroup = mCore.getCurrentFilterBlockGroup();
+			if (filterBlockGroup != null)
+				_prefs.put(PREFS_FB_GROUP, filterBlockGroup);
+			String objectiveTuretGroup = mCore.getCurrentObjectiveTurretGroup();
+			if (objectiveTuretGroup != null) {
+				_prefs.put(PREFS_OT_GROUP, objectiveTuretGroup);
+				HashMap<String, Double> hashMag = mCore.getAvailableMagnifications();
+				if (hashMag != null) {
+					XMLPreferences nodeObjectiveTurret = _prefs.node(objectiveTuretGroup);
+					for (String currentKey : hashMag.keySet()) {
+						nodeObjectiveTurret.put(currentKey, "" + hashMag.get(currentKey));
+					}
 				}
 			}
-		}
-		if (mCore != null) {
 			if (mCore.isSequenceRunning())
 				try {
 					mCore.stopSequenceAcquisition();
@@ -1182,40 +1180,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 */
 	public static boolean instanced() {
 		return instanced;
-	}
-
-	@SuppressWarnings("unused")
-	private ActionListener createColorButtonListener(final ColorLabel cl) {
-		return new ActionListener() {
-			@Override
-			public void actionPerformed(final ActionEvent e) {
-				final JColorChooser tcc = new JColorChooser(painterPreferences.getColor(e.getActionCommand()));
-				tcc.getSelectionModel().addChangeListener(new ChangeListener() {
-
-					@Override
-					public void stateChanged(ChangeEvent e2) {
-						Color actualColor = painterPreferences.getColor(e.getActionCommand());
-						Color result = tcc.getColor();
-						if (actualColor == null)
-							result = new Color(result.getRed(), result.getGreen(), result.getBlue());
-						else
-							result = new Color(result.getRed(), result.getGreen(), result.getBlue(), actualColor.getAlpha());
-						painterPreferences.setColor(e.getActionCommand(), result);
-						cl.setColor(result);
-					}
-				});
-				JDialog jd = JColorChooser.createDialog(getContentPane(), "Choose color", true, tcc, null, null);
-				jd.setVisible(true);
-			}
-		};
-	}
-
-	@SuppressWarnings("unused")
-	private JButton createColorButtonSetter(String s, ActionListener action) {
-		JButton toReturn = new JButton("set");
-		toReturn.setActionCommand(s);
-		toReturn.addActionListener(action);
-		return toReturn;
 	}
 
 	@Override
@@ -1810,9 +1774,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		/** generated UID */
 		private static final long serialVersionUID = 1L;
 		private int progress = 0;
-		String renderedName;
-		MicroscopePluginAcquisition plugin;
-		boolean valueDisplayed;
+		private String renderedName;
+		private MicroscopePluginAcquisition plugin;
+		private boolean valueDisplayed;
 
 		/**
 		 * 
@@ -1902,7 +1866,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		String filename = null;
 		JFileChooser fc = new JFileChooser();
 		fc.setFileFilter(new FileNameExtensionFilter("Sate Files (.xml)", "xml"));
-		int returnVal = fc.showDialog(Icy.getMainInterface().getFrame(), "Save File");
+		int returnVal = fc.showDialog(Icy.getMainInterface().getMainFrame(), "Save File");
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			filename = fc.getSelectedFile().getAbsolutePath();
 			if (!filename.endsWith(".xml"))
@@ -1984,17 +1948,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		}
 	}
 
-	private class ColorLabel extends ColorComponent {
-
-		/** Generated serial UID */
-		private static final long serialVersionUID = 1L;
-
-		@SuppressWarnings("unused")
-		public ColorLabel(String colorName) {
-			super(painterPreferences.getColor(colorName));
-		}
-	}
-
 	private class AdvancedConfigurationDialog extends JDialog {
 
 		private boolean waitingForObjectiveChange = false;
@@ -2006,7 +1959,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		JLabel lblCurrentFilterBLockGroup;
 
 		public AdvancedConfigurationDialog() {
-			super(Icy.getMainInterface().getFrame(), "Advanced Configuration Dialog", false);
+			super(Icy.getMainInterface().getMainFrame(), "Advanced Configuration Dialog", false);
 
 			JPanel panelDevices = new JPanel(new GridLayout(2, 3));
 			panelDevices.setBorder(BorderFactory.createEmptyBorder(20, 10, 10, 10));

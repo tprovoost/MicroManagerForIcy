@@ -2,6 +2,7 @@ package plugins.tprovoost.Microscopy.MicroManagerForIcy.painters;
 
 import icy.canvas.Canvas3D;
 import icy.canvas.IcyCanvas;
+import icy.canvas.Layer;
 import icy.image.IcyBufferedImage;
 import icy.sequence.Sequence;
 import icy.util.StringUtil;
@@ -21,15 +22,28 @@ public class PainterInfoConfig extends MicroscopePainter {
 	private String exposure = null;
 	private String timeCapture = null;
 	private boolean displayHelp = true;
-
+	
 	@Override
 	public void paint(Graphics2D g, Sequence sequence, IcyCanvas canvas) {
+		// ------------
+		// Verifications before drawing
+		// -----------
 		if (!displayHelp || canvas instanceof Canvas3D)
 			return;
+		Layer layer = canvas.getLayer(this);
+		if (layer != null && !layer.getName().equals("Info Config"))
+			layer.setName("Info Config");
+		
+		// ----------
+		// Variables
+		// ----------
 		int w = sequence.getWidth();
 		int h = sequence.getHeight();
-
 		IcyBufferedImage img = canvas.getCurrentImage();
+		
+		// ------------
+		// set the values
+		// ------------
 		if (img instanceof MicroscopeImage) {
 			MicroscopeImage Mimg = (MicroscopeImage) img;
 			double exp = Mimg.getExposure();

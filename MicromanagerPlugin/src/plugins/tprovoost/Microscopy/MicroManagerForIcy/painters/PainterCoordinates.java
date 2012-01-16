@@ -2,6 +2,7 @@ package plugins.tprovoost.Microscopy.MicroManagerForIcy.painters;
 
 import icy.canvas.Canvas3D;
 import icy.canvas.IcyCanvas;
+import icy.canvas.Layer;
 import icy.image.IcyBufferedImage;
 import icy.roi.ROI;
 import icy.sequence.Sequence;
@@ -51,14 +52,23 @@ public class PainterCoordinates extends MicroscopePainter {
 	@Override
 	public void paint(Graphics2D g, Sequence sequence, IcyCanvas canvas) {
 		super.paint(g, sequence, canvas);
-		if ( canvas instanceof Canvas3D)
+
+		// -------------
+		// VERIFICATIONS
+		// -------------
+		if (canvas instanceof Canvas3D)
 			return;
 		if (xValue.contains("0.0000") && yValue.contains("0.0000") && zValue.contains("0.0000"))
 			return;
+		Layer layer = canvas.getLayer(this);
+		if (layer != null && !layer.getName().equals("Coordinates"))
+			layer.setName("Coordinates");
+		// VARIABLES
 		int w = sequence.getWidth();
 		int h = sequence.getHeight();
-
 		IcyBufferedImage img = canvas.getCurrentImage();
+
+		// set the values
 		if (img instanceof MicroscopeImage) {
 			MicroscopeImage Mimg = (MicroscopeImage) img;
 			xValue = StringUtil.toString(Mimg.getX(), 4) + " µm";

@@ -4,19 +4,18 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
 import icy.gui.dialog.MessageDialog;
-import icy.plugin.abstract_.Plugin;
-import icy.plugin.interface_.PluginImageAnalysis;
+import icy.plugin.abstract_.PluginActionable;
 
 /**
  * @author Thomas Provoost
  * 
  */
-public class MicromanagerPlugin extends Plugin implements PluginImageAnalysis {
+public class MicromanagerPlugin extends PluginActionable {
 
 	/** Reference to the actual core */
 
 	@Override
-	public void compute() {
+	public void run() {
 		MMMainFrame frame = MMMainFrame.getInstance();
 		if (frame != null)
 			frame.setVisible(true);

@@ -326,7 +326,7 @@ public class ConfiguratorDialog extends JDialog {
 		File f;
 		JFileChooser fc = new JFileChooser();
 		fc.setFileFilter(new FileNameExtensionFilter("Configuration Files (.cfg)", "cfg"));
-		int returnVal = fc.showDialog(Icy.getMainInterface().getFrame(), "Launch Configuration");
+		int returnVal = fc.showDialog(Icy.getMainInterface().getMainFrame(), "Launch Configuration");
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			f = fc.getSelectedFile();
 		} else

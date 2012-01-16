@@ -1,7 +1,6 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
-import icy.plugin.abstract_.Plugin;
-import icy.plugin.interface_.PluginImageAnalysis;
+import icy.plugin.abstract_.PluginActionable;
 import icy.system.thread.ThreadUtil;
 
 import org.micromanager.utils.StateItem;
@@ -18,7 +17,7 @@ import org.micromanager.utils.StateItem;
  * @author Thomas Provoost
  * @see #start()
  */
-public abstract class MicroscopePlugin extends Plugin implements PluginImageAnalysis {
+public abstract class MicroscopePlugin extends PluginActionable {
 
 	/**
 	 * This is a reference to the MMMainFrame gui.
@@ -38,7 +37,7 @@ public abstract class MicroscopePlugin extends Plugin implements PluginImageAnal
 	}
 
 	@Override
-	public void compute() {
+	public void run() {
 		if (!MMMainFrame.isInstancing() && !MMMainFrame.instanced())
 			return;
 

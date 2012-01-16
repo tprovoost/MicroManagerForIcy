@@ -14,8 +14,10 @@ public class SliderRenderer extends JSlider implements TableCellRenderer {
 	 */
 	private static final long serialVersionUID = -67864008719282299L;
 
-	public SliderRenderer() {
+	public SliderRenderer(int minValue, int maxValue) {
 		super(SwingConstants.HORIZONTAL);
+		setMinimum(minValue);
+		setMaximum(maxValue);
 	}
 	
 	@Override
