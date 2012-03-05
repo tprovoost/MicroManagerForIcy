@@ -1,6 +1,6 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
-import icy.common.AcceptListener;
+import icy.common.listener.AcceptListener;
 import icy.common.MenuCallback;
 import icy.gui.component.IcyLogo;
 import icy.gui.dialog.ConfirmDialog;
