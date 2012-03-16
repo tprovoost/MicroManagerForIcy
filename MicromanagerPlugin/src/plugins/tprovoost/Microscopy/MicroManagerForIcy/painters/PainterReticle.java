@@ -3,7 +3,6 @@ package plugins.tprovoost.Microscopy.MicroManagerForIcy.painters;
 import icy.canvas.Canvas3D;
 import icy.canvas.IcyCanvas;
 import icy.canvas.Layer;
-import icy.roi.ROI;
 import icy.sequence.Sequence;
 
 import java.awt.BasicStroke;
@@ -26,8 +25,8 @@ public class PainterReticle extends MicroscopePainter {
 		// VARIABLES
 		int w = sequence.getWidth();
 		int h = sequence.getHeight();
-		int sizew = (int) (ROI.canvasToImageLogDeltaX(canvas, 20));
-		float strokew = (float) ROI.canvasToImageDeltaX(canvas, 2);
+		int sizew = (int) (canvas.canvasToImageLogDeltaX(20));
+		float strokew = (float) canvas.canvasToImageDeltaX(2);
 		
 		// Draw the shadow
 		g.setColor(prefs.getColor("Shadow"));
