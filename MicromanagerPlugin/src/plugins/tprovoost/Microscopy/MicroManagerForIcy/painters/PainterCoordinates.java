@@ -4,7 +4,6 @@ import icy.canvas.Canvas3D;
 import icy.canvas.IcyCanvas;
 import icy.canvas.Layer;
 import icy.image.IcyBufferedImage;
-import icy.roi.ROI;
 import icy.sequence.Sequence;
 import icy.util.StringUtil;
 

@@ -267,7 +267,10 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			@Override
 			public void run() {
 				while (!_isConfigLoaded) {
-					Thread.yield();
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+					}
 				}
 				ThreadUtil.invokeLater(new Runnable() {
 

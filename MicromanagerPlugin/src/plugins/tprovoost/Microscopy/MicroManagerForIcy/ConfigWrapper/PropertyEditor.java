@@ -329,7 +329,7 @@ public class PropertyEditor extends IcyFrame {
 				while (run) {
 					while (pause) {
 						try {
-							Thread.sleep(50);
+							Thread.sleep(1000);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
