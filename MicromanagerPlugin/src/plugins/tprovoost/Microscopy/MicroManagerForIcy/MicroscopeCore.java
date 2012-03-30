@@ -24,6 +24,7 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
 import mmcorej.CMMCore;
+import mmcorej.DeviceType;
 import mmcorej.StrVector;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.MathTools;
 

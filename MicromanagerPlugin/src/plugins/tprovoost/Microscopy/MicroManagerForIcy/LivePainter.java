@@ -19,16 +19,14 @@ public class LivePainter extends MicroscopePainter {
 
 	MicroscopeCore mCore = MicroscopeCore.getCore();
 	Point2D lastImagePoint;
-	boolean invertX;
-	boolean invertY;
 
 	XMLPreferences prefs = IcyPreferences.pluginsRoot().node("LivePainter");
 	boolean considerPxSizeCfg;
 
 	public LivePainter(LiveSequence s) {
 		considerPxSizeCfg = prefs.getBoolean("considerPxSizeCfg", true);
-		invertX = prefs.getBoolean("invertX", false);
-		invertY = prefs.getBoolean("invertY", false);
+		StageMover.setInvertX(prefs.getBoolean("invertX", false));
+		StageMover.setInvertY(prefs.getBoolean("invertY", false));
 		for (Painter pa : s.getPainters()) {
 			if (pa instanceof PainterInfoConfig) {
 				((PainterInfoConfig) pa).putData("helpDrag", "Alt + drag: move the stage");
@@ -41,14 +39,14 @@ public class LivePainter extends MicroscopePainter {
 	}
 
 	private void setInvertX(PainterInfoConfig pif) {
-		if (invertX)
+		if (StageMover.isInvertX())
 			pif.putData("helpInvertX", "x: inverted (Alt + X to change)");
 		else
 			pif.putData("helpInvertX", "x: normal (Alt + X to change)");
 	}
 
 	private void setInvertY(PainterInfoConfig pif) {
-		if (invertY)
+		if (StageMover.isInvertY())
 			pif.putData("helpInvertY", "y: inverted (Alt + Y to change)");
 		else
 			pif.putData("helpInvertY", "y: normal (Alt + Y to change)");
@@ -57,14 +55,14 @@ public class LivePainter extends MicroscopePainter {
 	@Override
 	public void keyPressed(KeyEvent e, Point2D imagePoint, IcyCanvas canvas) {
 		if (e.isAltDown() && e.getKeyCode() == KeyEvent.VK_X) {
-			invertX = !invertX;
+			StageMover.setInvertX(StageMover.isInvertX());
 			for (Painter pa : canvas.getSequence().getPainters()) {
 				if (pa instanceof PainterInfoConfig) {
 					setInvertX((PainterInfoConfig) pa);
 				}
 			}
 		} else if (e.isAltDown() && e.getKeyCode() == KeyEvent.VK_Y) {
-			invertY = !invertY;
+			StageMover.setInvertY(StageMover.isInvertY());
 			for (Painter pa : canvas.getSequence().getPainters()) {
 				if (pa instanceof PainterInfoConfig) {
 					setInvertY((PainterInfoConfig) pa);
@@ -82,7 +80,7 @@ public class LivePainter extends MicroscopePainter {
 		if (e.isShiftDown() && e.isControlDown()) {
 			if (mCore.getAvailablePixelSizeConfigs().size() > 0)
 				try {
-					StageMover.moveToPoint(canvas.getSequence(), imagePoint.getX(), imagePoint.getY(), invertX, invertY);
+					StageMover.moveToPoint(canvas.getSequence(), imagePoint.getX(), imagePoint.getY());
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}

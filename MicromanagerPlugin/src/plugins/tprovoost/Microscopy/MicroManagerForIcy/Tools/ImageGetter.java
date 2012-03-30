@@ -30,7 +30,8 @@ public class ImageGetter {
 		}
 		try {
 			/* Core Function */
-			if (core.getBytesPerPixel() == 1 || core.getBytesPerPixel() == 2) {
+			long bytePerPixel = core.getBytesPerPixel() ;
+			if ( bytePerPixel == 1 || bytePerPixel == 2) {
 				core.snapImage();
 				short[] img = Array1DUtil.arrayToShortArray(core.getImage(),false);
 				int width = (int) core.getImageWidth();
@@ -41,13 +42,16 @@ public class ImageGetter {
 				toReturn.setDataXYAsShort(0, img);
 				return toReturn;
 			} else {
-				System.out.println("Dont' know how to handle images with " + core.getBytesPerPixel() + " byte pixels.");
+				if (bytePerPixel == 0)
+					System.out.println("No image.");
+				else
+					System.out.println("Dont' know how to handle images with " + bytePerPixel + " byte pixels.");
 				return null;
 			}
 		} catch (Exception e) {
 			if (e.toString().contains("Camera image buffer read failed")) {
 				try {
-					Thread.sleep(200);
+					Thread.sleep(10);
 				} catch (InterruptedException e1) {
 				}
 				++retry;
@@ -59,9 +63,7 @@ public class ImageGetter {
 			} else if (e.toString().contains("This operation can not be executed while sequence acquisition is runnning")
 					|| e.toString().contains("Camera Busy.  Stop camera activity first")) {
 				try {
-					core.waitForDevice(core.getCameraDevice());
 					core.waitForExposure();
-					core.waitForImageSynchro();
 				} catch (Exception e1) {
 				}
 				return getImageFromLive(core);
@@ -104,9 +106,7 @@ public class ImageGetter {
 			} else if (e.toString().contains("This operation can not be executed while sequence acquisition is runnning")
 					|| e.toString().contains("Camera Busy.  Stop camera activity first")) {
 				try {
-					core.waitForDevice(core.getCameraDevice());
 					core.waitForExposure();
-					core.waitForImageSynchro();
 				} catch (Exception e1) {
 				}
 				return getImageFromLiveToShort(core);

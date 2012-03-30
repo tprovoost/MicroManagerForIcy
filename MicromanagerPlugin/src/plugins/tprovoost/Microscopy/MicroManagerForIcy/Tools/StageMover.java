@@ -1,7 +1,8 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools;
 
-import icy.sequence.Sequence;
+import icy.preferences.XMLPreferences;
 import icy.roi.ROI2D;
+import icy.sequence.Sequence;
 import icy.system.thread.ThreadUtil;
 
 import java.util.ArrayList;
@@ -13,7 +14,29 @@ public class StageMover {
 
 	private static ArrayList<StageListener> _listeners = new ArrayList<StageListener>();
 	private static VerifyMovement verifier = null;
+	private static boolean invertX = false;
+	private static boolean invertY = false;
+	private static boolean invertZ = false;
+	private static boolean switchXY = false;
 
+	private static XMLPreferences prefs;
+	/** Constant value of the invert x for stage movement*/
+	private static final String INVERTX = "invertx";
+	/** Constant value of the invert y for stage movement*/
+	private static final String INVERTY = "inverty";
+	/** Constant value of the invert z for stage movement*/
+	private static final String INVERTZ = "invertz";
+	/** Constant value of the switch between x and y for stage movement*/
+	private static final String SWITCHXY = "switchxy";
+	
+	public static void loadPreferences(XMLPreferences pref) {
+		prefs = pref;
+		invertX = prefs.getBoolean(INVERTX, false);
+		invertY = prefs.getBoolean(INVERTY, false);
+		invertZ = prefs.getBoolean(INVERTZ, false);
+		switchXY = prefs.getBoolean(SWITCHXY, false);
+	}
+	
 	/**
 	 * Add a listener to the Stage Mover. The Stage Mover will update the
 	 * listeners with the new values of the XY stage and focus device (x,y,z).
@@ -108,7 +131,10 @@ public class StageMover {
 		String namez = core.getFocusDevice();
 		if (namez == "")
 			return;
-		core.setRelativePosition(namez, movement);
+		if (invertZ)
+			core.setRelativePosition(namez, -movement);
+		else
+			core.setRelativePosition(namez, movement);
 	}
 
 	/**
@@ -122,7 +148,7 @@ public class StageMover {
 	 * @throws Exception
 	 */
 	public static void moveXYRelative(double movX, double movY) throws Exception {
-		moveXYRelative(movX, movY, false, false, false);
+		moveXYRelative(movX, movY, false);
 	}
 
 	/**
@@ -139,25 +165,7 @@ public class StageMover {
 	 *            : should invert Y Axis or not
 	 * @throws Exception
 	 */
-	public static void moveXYRelative(double movX, double movY, boolean invertX, boolean invertY) throws Exception {
-		moveXYRelative(movX, movY, invertX, invertY, false);
-	}
-
-	/**
-	 * 
-	 * Moves the stage on the X and Y axes relative to actual position.
-	 * 
-	 * @param movX
-	 *            : movement on X-Axis (in µm)
-	 * @param invertX
-	 *            : should invert X Axis or not
-	 * @param movY
-	 *            : movement on Y-Axis (in µm)
-	 * @param invertY
-	 *            : should invert Y Axis or not
-	 * @throws Exception
-	 */
-	public static void moveXYRelative(double movX, double movY, boolean invertX, boolean invertY, boolean waitStage) throws Exception {
+	public static void moveXYRelative(double movX, double movY, boolean waitStage) throws Exception {
 		if (!MicroscopeCore.isReady())
 			return;
 		MicroscopeCore core = MicroscopeCore.getCore();
@@ -168,7 +176,10 @@ public class StageMover {
 			return;
 		int invXModifier = invertX ? -1 : 1;
 		int invYModifier = invertY ? -1 : 1;
-		core.setRelativeXYPosition(device, movX * invXModifier, movY * invYModifier);
+		if (switchXY)
+			core.setRelativeXYPosition(device, movY * invYModifier, movX * invXModifier);
+		else
+			core.setRelativeXYPosition(device, movX * invXModifier, movY * invYModifier);
 		if (waitStage) {
 			while (movX > 10 && movY > 10 && isXYStageMoving(100, 1)) {
 				Thread.yield();
@@ -299,7 +310,7 @@ public class StageMover {
 	 *            : Invert Y-Axis or not.
 	 * @throws Exception
 	 */
-	public static void moveStageToROI(Sequence s, ROI2D roi, boolean invertX, boolean invertY) throws Exception {
+	public static void moveStageToROI(Sequence s, ROI2D roi) throws Exception {
 		if (!MicroscopeCore.isReady())
 			return;
 		MicroscopeCore core = MicroscopeCore.getCore();
@@ -314,7 +325,7 @@ public class StageMover {
 
 		// Y coordinates are inverted in the sequence
 		double vecty = -(roi.getBounds().getCenterY() - s.getBounds().getCenterY());
-		StageMover.moveXYRelative(vectx * pxsize, vecty * pxsize, invertX, invertY);
+		StageMover.moveXYRelative(vectx * pxsize, vecty * pxsize);
 	}
 
 	/**
@@ -335,7 +346,7 @@ public class StageMover {
 	 *            : should y-axis be inverted ?
 	 * @throws Exception
 	 */
-	public static void moveToPoint(Sequence s, double x, double y, boolean invertX, boolean invertY) throws Exception {
+	public static void moveToPoint(Sequence s, double x, double y) throws Exception {
 		if (!MicroscopeCore.isReady())
 			return;
 		MicroscopeCore core = MicroscopeCore.getCore();
@@ -348,7 +359,7 @@ public class StageMover {
 		double vecty = y - s.getBounds().getCenterY(); // Y coordinates are
 														// inverted in the
 														// sequence
-		StageMover.moveXYRelative(vectx * pxsize, vecty * pxsize, invertX, invertY);
+		StageMover.moveXYRelative(vectx * pxsize, vecty * pxsize);
 	}
 
 	/**
@@ -552,7 +563,8 @@ public class StageMover {
 
 	/**
 	 * This method verifies during the measure time if there was a movement
-	 * greater than the threshold.<br/><br/>
+	 * greater than the threshold.<br/>
+	 * <br/>
 	 * During measureTime, as many as possible values of x and y are captured.
 	 * When measureTime is over, the highest difference in x and y is compared
 	 * to the thresholdMovement value.
@@ -560,7 +572,8 @@ public class StageMover {
 	 * @param measureTime
 	 *            : value in milliseconds to wait for
 	 * @param thresholdMovement
-	 *            : value to exceed for a movement to be noticed (unit depending on the stage, but should be in µm)
+	 *            : value to exceed for a movement to be noticed (unit depending
+	 *            on the stage, but should be in µm)
 	 * @return Returns true if stage is moving.
 	 */
 	public static boolean isXYStageMoving(long measureTime, double thresholdMovement) {
@@ -668,5 +681,41 @@ public class StageMover {
 			return true;
 		else
 			return false;
+	}
+
+	public static void setInvertX(boolean invertX) {
+		StageMover.invertX = invertX;
+		prefs.putBoolean(INVERTX, invertX);
+	}
+
+	public static void setInvertY(boolean invertY) {
+		StageMover.invertY = invertY;
+		prefs.putBoolean(INVERTY, invertY);
+	}
+
+	public static void setInvertZ(boolean invertZ) {
+		StageMover.invertZ = invertZ;
+		prefs.putBoolean(INVERTZ, invertZ);
+	}
+
+	public static boolean isInvertX() {
+		return invertX;
+	}
+
+	public static boolean isInvertY() {
+		return invertY;
+	}
+
+	public static boolean isInvertZ() {
+		return invertZ;
+	}
+
+	public static void setSwitchXY(boolean switchXY) {
+		StageMover.switchXY = switchXY;
+		prefs.putBoolean(SWITCHXY, switchXY);
+	}
+
+	public static boolean isSwitchXY() {
+		return switchXY;
 	}
 }
