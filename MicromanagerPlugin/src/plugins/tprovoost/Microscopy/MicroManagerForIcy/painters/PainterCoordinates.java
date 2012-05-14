@@ -4,7 +4,6 @@ import icy.canvas.Canvas3D;
 import icy.canvas.IcyCanvas;
 import icy.canvas.Layer;
 import icy.image.IcyBufferedImage;
-import icy.roi.ROI;
 import icy.sequence.Sequence;
 import icy.util.StringUtil;
 
@@ -49,6 +48,7 @@ public class PainterCoordinates extends MicroscopePainter {
 		zValue = StringUtil.toString(-z, 4);
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void paint(Graphics2D g, Sequence sequence, IcyCanvas canvas) {
 		super.paint(g, sequence, canvas);
@@ -87,9 +87,9 @@ public class PainterCoordinates extends MicroscopePainter {
 		int fh = g.getFontMetrics().getHeight();
 		int wh = g.getFontMetrics().charsWidth(toDisplay.toCharArray(), 0, toDisplay.length());
 		// DRAW
-		g.setColor(prefs.getColor("Text Background"));
+		g.setColor(prefs.getColor("Background"));
 		g.fillRect(0, h - fh, wh + fh * 2, fh);
-		g.setStroke(new BasicStroke((float) ROI.canvasToImageLogDeltaX(canvas,4)));
+		g.setStroke(new BasicStroke((float) canvas.canvasToImageLogDeltaX(4)));
 		g.setColor(prefs.getColor("Borders"));
 		g.setStroke(new BasicStroke(1));
 		g.drawRect(0, h - fh, wh + fh * 2, fh);

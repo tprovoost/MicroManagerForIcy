@@ -17,11 +17,11 @@ public class MicroscopePainterPreferences {
 	private MicroscopePainterPreferences() {
 		// some colors are loaded by default
 		colors.put("Normal", new Color(30, 255, 255, 100));
-		colors.put("Text Background", new Color(0, 0, 0, 75));
-		colors.put("Borders", new Color(217, 217, 217, 100));
 		colors.put("Text", new Color(250, 253, 12, 100));
+		colors.put("Borders", new Color(217, 217, 217, 100));
+		colors.put("Foreground", new Color(250, 253, 12, 100));
+		colors.put("Background", new Color(0, 0, 0, 75));
 		colors.put("Shadow", Color.GRAY);
-		colors.put("Reticle", new Color(250, 253, 12, 100));
 	}
 
 	public void setPreferences(XMLPreferences root) {

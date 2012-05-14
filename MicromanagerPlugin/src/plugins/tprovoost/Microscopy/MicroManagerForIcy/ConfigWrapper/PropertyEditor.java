@@ -229,7 +229,7 @@ public class PropertyEditor extends IcyFrame {
 		ThreadUpdater thread = null;
 
 		public PropertyEditorTableData(CMMCore core, String groupName, String presetName, int PropertyValueColumn, int PropertyUsedColumn, Component parentComponent) {
-			super(core, groupName, presetName, PropertyValueColumn, PropertyUsedColumn, parentComponent);
+			super(core, groupName, presetName, PropertyValueColumn, PropertyUsedColumn, false);
 		}
 
 		public void setValueAt(Object value, int row, int col) {

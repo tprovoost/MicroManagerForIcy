@@ -90,6 +90,7 @@ import org.micromanager.utils.StateItem;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.AutofocusManager;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigButtonsPanel;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigGroupPad;
+import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.FakeScriptInterfacer;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.PropertyEditor;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.StageMover;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.ColorEditor;
@@ -297,7 +298,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						} catch (MMScriptException e1) {
 							e1.printStackTrace();
 						}
-						posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
+						posListDlg_ = new PositionListDlg(mCore, new FakeScriptInterfacer(), _posList, null);
 						posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 
 						setSystemMenuCallback(new MenuCallback() {
@@ -351,7 +352,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 									public void actionPerformed(ActionEvent e) {
 										CalibrationListDlg dlg = new CalibrationListDlg(mCore);
 										dlg.setDefaultCloseOperation(2);
-										dlg.setParentGUI(MMMainFrame.this);
+										dlg.setParentGUI(new FakeScriptInterfacer());
 										dlg.setVisible(true);
 										dlg.addWindowListener(new WindowAdapter() {
 											@Override
@@ -663,7 +664,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 									int col = tablemodelevent.getColumn();
 									String columnName = tableModel.getColumnName(col);
 									String painterName = (String) tableModel.getValueAt(row, 0);
-									;
 									if (columnName.contains("Color")) {
 										// New color value
 										int alpha = painterPreferences.getColor(painterName).getAlpha();
@@ -771,13 +771,11 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			for (Viewer v : s.getViewers()) {
 				for (LUTBand lutband : v.getLut().getLutBands()) {
 					if (_cbAbsoluteHisto.isSelected()) {
-						s.setComponentAbsBoundsAutoUpdate(false);
-						s.setComponentUserBoundsAutoUpdate(false);
+						s.setAutoUpdateChannelBounds(false);
 						double maxvalue = Math.pow(2, _comboBitDepth.getSelectedIndex() + 8);
 						lutband.getScaler().setAbsLeftRightIn(0, maxvalue);
 					} else {
-						s.setComponentAbsBoundsAutoUpdate(true);
-						s.setComponentUserBoundsAutoUpdate(true);
+						s.setAutoUpdateChannelBounds(true);
 						lutband.getScaler().setAbsLeftRightIn(lutband.getMin(), lutband.getMax());
 					}
 				}
@@ -1242,11 +1240,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	public void enableLiveMode(boolean flag) {
 	}
 
-	@Override
-	public org.micromanager.utils.AutofocusManager getAutofocusManager() {
-		return null;
-	}
-
 	public AutofocusManager getAutoFocusManager() {
 		return _afMgr;
 	}
@@ -1370,15 +1363,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	}
 
 	@Override
-	public boolean isBurstAcquisitionRunning() throws MMScriptException {
-		return false;
-	}
-
-	@Override
-	public void loadAcquisition(String s) throws MMScriptException {
-	}
-
-	@Override
 	public void makeActive() {
 		setVisible(true);
 	}
@@ -1397,10 +1381,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				updateGUI(false);
 			}
 		});
-	}
-
-	@Override
-	public void runBurstAcquisition() throws MMScriptException {
 	}
 
 	@Override
@@ -1423,35 +1403,23 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		saveConfigButton_.setEnabled(changed);
 	}
 
-	@Override
-	public void setPositionList(PositionList positionlist) throws MMScriptException {
-		_posList = PositionList.newInstance(positionlist);
-	}
-
 	public PositionList getPositionList() {
 		return _posList;
 	}
 
+	public void setPositionList(PositionList positionlist) throws MMScriptException {
+		_posList = PositionList.newInstance(positionlist);
+	}
+	
 	@Override
 	public void showXYPositionList() {
 		if (posListDlg_ == null) {
-			posListDlg_ = new PositionListDlg(mCore, this, _posList, null);
+			posListDlg_ = new PositionListDlg(mCore, new FakeScriptInterfacer(), _posList, null);
 			posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 		}
 		posListDlg_.setVisible(true);
 	}
 
-	@Override
-	public void sleep(long l) throws MMScriptException {
-	}
-
-	@Override
-	public void startAcquisition() throws MMScriptException {
-	}
-
-	@Override
-	public void startBurstAcquisition() throws MMScriptException {
-	}
 
 	@Override
 	public void stopAllActivity() {
@@ -1635,7 +1603,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				++i;
 		}
 		if (i != 0)
-			name = name + i;
+			name = name + " (" + (i + 1) + ")";
 		final String namefinal = name;
 		ThreadUtil.invokeNow(new Runnable() {
 
