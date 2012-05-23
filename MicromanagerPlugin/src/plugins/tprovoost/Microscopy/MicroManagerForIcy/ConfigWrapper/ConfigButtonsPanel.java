@@ -114,7 +114,7 @@ public class ConfigButtonsPanel extends JPanel {
 	public IcyButton createButton(String buttonText, String iconPath) {
 		IcyButton theButton;
 		if (iconPath.equals("")) {
-			theButton = new IcyButton("", "");
+			theButton = new IcyButton("",new IcyIcon( "", IcyIcon.DEFAULT_SIZE));
 			theButton.setText(buttonText);
 		} else
 			theButton = new IcyButton(buttonText, new IcyIcon(iconPath));
