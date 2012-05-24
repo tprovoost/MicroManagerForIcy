@@ -20,15 +20,15 @@ public class StageMover {
 	private static boolean switchXY = false;
 
 	private static XMLPreferences prefs;
-	/** Constant value of the invert x for stage movement*/
+	/** Constant value of the invert x for stage movement */
 	private static final String INVERTX = "invertx";
-	/** Constant value of the invert y for stage movement*/
+	/** Constant value of the invert y for stage movement */
 	private static final String INVERTY = "inverty";
-	/** Constant value of the invert z for stage movement*/
+	/** Constant value of the invert z for stage movement */
 	private static final String INVERTZ = "invertz";
-	/** Constant value of the switch between x and y for stage movement*/
+	/** Constant value of the switch between x and y for stage movement */
 	private static final String SWITCHXY = "switchxy";
-	
+
 	public static void loadPreferences(XMLPreferences pref) {
 		prefs = pref;
 		invertX = prefs.getBoolean(INVERTX, false);
@@ -36,7 +36,7 @@ public class StageMover {
 		invertZ = prefs.getBoolean(INVERTZ, false);
 		switchXY = prefs.getBoolean(SWITCHXY, false);
 	}
-	
+
 	/**
 	 * Add a listener to the Stage Mover. The Stage Mover will update the
 	 * listeners with the new values of the XY stage and focus device (x,y,z).
@@ -494,7 +494,8 @@ public class StageMover {
 		@Override
 		public void run() {
 			while (_running) {
-				while (_pleaseWait) {
+				ThreadUtil.sleep(200);
+				while (_running && (_listeners.isEmpty() || _pleaseWait)) {
 					try {
 						Thread.sleep(50);
 					} catch (InterruptedException e) {
@@ -510,6 +511,7 @@ public class StageMover {
 		}
 
 		boolean hasMoved() throws Exception {
+			boolean toReturn = false;
 			if (nameZ != "") {
 				double z;
 				try {
@@ -519,9 +521,9 @@ public class StageMover {
 				}
 				// round the values to one number after coma
 				// to avoid this method returns moved too often
-				if ((int) (z * 10) / 10.0D != (int) (oldZ * 10) / 10.0D) {
+				if (oldZ == Double.NaN || (int) (z * 10) / 10.0D != (int) (oldZ * 10) / 10.0D) {
 					oldZ = z;
-					return true;
+					toReturn = true;
 				}
 			}
 			if (nameXYStage != "") {
@@ -533,16 +535,16 @@ public class StageMover {
 				} catch (Exception e) {
 					return false;
 				}
-				if ((int) (x * 10) / 10.0D != (int) (oldX * 10) / 10.0D) {
+				if (oldX == Double.NaN ||(int) (x * 10) / 10.0D != (int) (oldX * 10) / 10.0D) {
 					oldX = x;
-					return true;
+					toReturn = true;
 				}
-				if ((int) (y * 10) / 10.0D != (int) (oldY * 10) / 10.0D) {
+				if (oldY == Double.NaN ||(int) (y * 10) / 10.0D != (int) (oldY * 10) / 10.0D) {
 					oldY = y;
-					return true;
+					toReturn = true;
 				}
 			}
-			return false;
+			return toReturn;
 		}
 
 	}
@@ -557,7 +559,8 @@ public class StageMover {
 	private static void notifyListeners(double x, double y, double z) {
 		ArrayList<StageListener> listcopy = new ArrayList<StageListener>(_listeners);
 		for (StageListener sl : listcopy) {
-			sl.stageMoved(x, y, z);
+			if (sl != null)
+				sl.stageMoved(x, y, z);
 		}
 	}
 
