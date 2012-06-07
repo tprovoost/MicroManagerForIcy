@@ -1,6 +1,7 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
 import icy.gui.component.IcyLogo;
+import icy.gui.dialog.ConfirmDialog;
 import icy.main.Icy;
 
 import java.awt.BorderLayout;
@@ -40,11 +41,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.micromanager.conf.ConfiguratorDlg;
+import org.micromanager.conf2.ConfiguratorDlg2;
 
 public class LoadFrame extends JDialog implements KeyListener, ContainerListener {
 
@@ -74,6 +76,7 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 	private int _actual_file_nb_groups;
 	private int _actual_file_nb_presets;
 	private boolean _isRightDisplayed = false;
+	private static LoadFrame singleton;
 
 	// ---------------
 	// UI Variables
@@ -84,7 +87,7 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 
 	// File choser panel
 	private JPanel _panel_files;
-	private JList _list_files;
+	private static JList _list_files;
 	private JScrollPane _scroll_files;
 
 	// Device List Panel
@@ -108,10 +111,11 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 	private JPanel _panel_resume;
 	private JTextArea _list_resume;
 
-	public LoadFrame() {
+	private LoadFrame() {
 		setTitle("Please choose your configuration file");
 		_retval = -1;
 		setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent windowevent) {
 				_retval = 1;
@@ -214,6 +218,7 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				loadConfig();
+				repaint();
 			}
 		});
 		_btn_remove = new JButton("-");
@@ -233,15 +238,18 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ConfiguratorDlg configurator = new ConfiguratorDlg(MicroscopeCore.getCore(), "");
+				ConfiguratorDlg2 configurator = new ConfiguratorDlg2(MicroscopeCore.getCore(), "");
 				configurator.setVisible(true);
 				String res = configurator.getFileName();
-				if (res != "")
+				if (sysConfigFile == "" || sysConfigFile == res || res == "") {
 					sysConfigFile = res;
-				loadFile();
+				} else {
+					loadFile(sysConfigFile);
+					if (ConfirmDialog.confirm("Launch new configuration", "Do you want to launch the new configuration?"))
+						loadConfig();
+				}
 			}
 		});
-		_btn_wizard.setEnabled(false);
 		if (!_isRightDisplayed) {
 			_btn_more = new JButton("More...");
 			_btn_more.setToolTipText("Expand panel for advanced information");
@@ -343,23 +351,22 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 		_isRightDisplayed = _prefs.getBoolean(DISP_RIGHT, displayright);
 	}
 
-	private void loadConfig() {
+	public void loadConfig() {
 		JFileChooser fc = new JFileChooser();
 		fc.setFileFilter(new FileNameExtensionFilter("Configuration Files (.cfg)", "cfg"));
 		int returnVal = fc.showDialog(Icy.getMainInterface().getMainFrame(), "Launch Configuration");
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			sysConfigFile = fc.getSelectedFile().getAbsolutePath();
-			loadFile();
+			loadFile(sysConfigFile);
 		}
 	}
 
-	private void loadFile() {
+	public void loadFile(String sysConfigFile) {
 		if (!_CFGFiles.contains(sysConfigFile))
 			_CFGFiles.addElement(sysConfigFile);
 		else
 			_list_files.setSelectedValue(sysConfigFile, true);
 		savePrefs();
-		repaint();
 	}
 
 	private void loadFileAttribs() throws IOException {
@@ -516,4 +523,11 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 		validate();
 		repaint();
 	}
+	
+	public static LoadFrame getInstance() {
+		if (singleton == null)
+			singleton = new LoadFrame();
+		return singleton;
+	}
+
 }

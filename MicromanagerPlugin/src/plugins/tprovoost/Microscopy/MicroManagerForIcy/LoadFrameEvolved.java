@@ -43,7 +43,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.micromanager.conf.ConfiguratorDlg;
+import org.micromanager.conf2.ConfiguratorDlg2;
 
 public class LoadFrameEvolved extends JDialog implements KeyListener, ContainerListener {
 
@@ -232,7 +232,7 @@ public class LoadFrameEvolved extends JDialog implements KeyListener, ContainerL
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ConfiguratorDlg configurator = new ConfiguratorDlg(MicroscopeCore.getCore(), "");
+				ConfiguratorDlg2 configurator = new ConfiguratorDlg2(MicroscopeCore.getCore(), "");
 				configurator.setVisible(true);
 				String res = configurator.getFileName();
 				if (res != "")

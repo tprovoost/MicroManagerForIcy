@@ -17,6 +17,10 @@ import javax.swing.JPanel;
 
 import mmcorej.CMMCore;
 
+import org.micromanager.ConfigGroupPad;
+import org.micromanager.GroupEditor;
+import org.micromanager.PresetEditor;
+import org.micromanager.api.ScriptInterface;
 import org.micromanager.utils.ReportingUtils;
 
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.MMMainFrame;
@@ -81,7 +85,7 @@ public class ConfigButtonsPanel extends JPanel {
 		_btn_refresh.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent actionevent) {
-				_gui.updateGUI(true);
+				_gui.refreshGUI();
 			}
 		});
 		_btn_refresh.setSize(new Dimension(40, 20));
@@ -220,5 +224,5 @@ public class ConfigButtonsPanel extends JPanel {
 	private IcyButton _btn_refresh;
 	private ConfigGroupPad configPad_;
 	private CMMCore core_;
-	private MMMainFrame _gui;
+	private ScriptInterface _gui;
 }

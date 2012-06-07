@@ -3,7 +3,6 @@ package plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools;
 import icy.preferences.XMLPreferences;
 import icy.roi.ROI2D;
 import icy.sequence.Sequence;
-import icy.system.thread.ThreadUtil;
 
 import java.util.ArrayList;
 
@@ -13,7 +12,6 @@ import plugins.tprovoost.Microscopy.MicroManagerForIcy.MicroscopeCore;
 public class StageMover {
 
 	private static ArrayList<StageListener> _listeners = new ArrayList<StageListener>();
-	private static VerifyMovement verifier = null;
 	private static boolean invertX = false;
 	private static boolean invertY = false;
 	private static boolean invertZ = false;
@@ -47,10 +45,6 @@ public class StageMover {
 	 */
 	public static void addListener(StageListener sl) {
 		_listeners.add(sl);
-		if (verifier == null) {
-			verifier = new VerifyMovement();
-			ThreadUtil.bgRun(verifier);
-		}
 	}
 
 	/**
@@ -63,35 +57,6 @@ public class StageMover {
 	 */
 	public static void removeListener(StageListener sl) {
 		_listeners.remove(sl);
-		if (verifier != null && _listeners.isEmpty()) {
-			verifier.stop();
-			verifier = null;
-		}
-	}
-
-	/**
-	 * This method stops the thread that updates the coordinates. <b>This method
-	 * is public for compatibility purposes, the use of this method in plugins
-	 * is highly discouraged.</b>
-	 */
-	public static void stopCoordinatesThread() {
-		if (verifier != null) {
-			verifier.stop();
-			verifier = null;
-		}
-	}
-
-	/**
-	 * This method will pause or resume the thread that updates the coordinates.
-	 * <b>This method is public for compatibility purposes, the use of this
-	 * method in plugins is highly discouraged.</b>
-	 * 
-	 * @param b
-	 *            : pause value. true = pause / false = resume
-	 */
-	synchronized public static void setPauseThread(boolean b) {
-		if (verifier != null)
-			verifier._pleaseWait = b;
 	}
 
 	/**
@@ -446,124 +411,6 @@ public class StageMover {
 		return toReturn;
 	}
 
-	static class VerifyMovement implements Runnable {
-		MicroscopeCore core = MicroscopeCore.getCore();
-		/** Used to pause the thread */
-		boolean please_wait = false;
-		/** Used to calculate any movement difference on X. */
-		double oldX;
-		/** Used to calculate any movement difference on Y. */
-		double oldY;
-		/** Used to calculate any movement difference on Z. */
-		double oldZ;
-		/** Name of the XYStage device */
-		String nameXYStage;
-		/** Name of the focus device */
-		String nameZ;
-		/** Boolean to run or stop the main loop */
-		private boolean _running = true;
-		/** Set this boolean to true to pause the thread */
-		private boolean _pleaseWait = false;
-
-		private VerifyMovement() {
-			try {
-				nameXYStage = core.getXYStageDevice();
-				oldX = core.getXPosition(nameXYStage);
-				oldY = core.getYPosition(nameXYStage);
-			} catch (Exception e) {
-				System.out.println("No XY Stage.");
-				nameXYStage = "";
-				oldX = Double.NaN;
-				oldY = Double.NaN;
-			}
-			try {
-				nameZ = core.getFocusDevice();
-				oldZ = core.getPosition(nameZ);
-			} catch (Exception e) {
-				System.out.println("No Z Stage.");
-				nameZ = "";
-				oldZ = Double.NaN;
-				e.printStackTrace();
-			}
-		}
-
-		public void stop() {
-			_running = false;
-		}
-
-		@Override
-		public void run() {
-			while (_running) {
-				ThreadUtil.sleep(200);
-				while (_running && (_listeners.isEmpty() || _pleaseWait)) {
-					try {
-						Thread.sleep(50);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-				try {
-					if (hasMoved())
-						notifyListeners(oldX, oldY, oldZ);
-				} catch (Exception e) {
-				}
-			}
-		}
-
-		boolean hasMoved() throws Exception {
-			boolean toReturn = false;
-			if (nameZ != "") {
-				double z;
-				try {
-					z = core.getPosition(nameZ);
-				} catch (Exception e) {
-					return false;
-				}
-				// round the values to one number after coma
-				// to avoid this method returns moved too often
-				if (oldZ == Double.NaN || (int) (z * 10) / 10.0D != (int) (oldZ * 10) / 10.0D) {
-					oldZ = z;
-					toReturn = true;
-				}
-			}
-			if (nameXYStage != "") {
-				double x;
-				double y;
-				try {
-					x = core.getXPosition(nameXYStage);
-					y = core.getYPosition(nameXYStage);
-				} catch (Exception e) {
-					return false;
-				}
-				if (oldX == Double.NaN ||(int) (x * 10) / 10.0D != (int) (oldX * 10) / 10.0D) {
-					oldX = x;
-					toReturn = true;
-				}
-				if (oldY == Double.NaN ||(int) (y * 10) / 10.0D != (int) (oldY * 10) / 10.0D) {
-					oldY = y;
-					toReturn = true;
-				}
-			}
-			return toReturn;
-		}
-
-	}
-
-	/**
-	 * Call the stageMoved method of all listeners with the x,y,z coordinates.
-	 * 
-	 * @param x
-	 * @param y
-	 * @param z
-	 */
-	private static void notifyListeners(double x, double y, double z) {
-		ArrayList<StageListener> listcopy = new ArrayList<StageListener>(_listeners);
-		for (StageListener sl : listcopy) {
-			if (sl != null)
-				sl.stageMoved(x, y, z);
-		}
-	}
-
 	/**
 	 * This method verifies during the measure time if there was a movement
 	 * greater than the threshold.<br/>
@@ -720,5 +567,25 @@ public class StageMover {
 
 	public static boolean isSwitchXY() {
 		return switchXY;
+	}
+
+	public static void onStagePositionChanged(String s, double z) {
+		for (StageListener l : _listeners)
+			l.onStagePositionChanged(s, z);
+	}
+
+	public static void onStagePositionChangedRelative(String s, double z) {
+		for (StageListener l : _listeners)
+			l.onStagePositionChangedRelative(s, z);
+	}
+
+	public static void onXYStagePositionChanged(String s, double d, double d1) {
+		for (StageListener l : _listeners)
+			l.onXYStagePositionChanged(s, d, d1);
+	};
+
+	public static void onXYStagePositionChangedRelative(String s, double d, double d1) {
+		for (StageListener l : _listeners)
+			l.onXYStagePositionChangedRelative(s, d, d1);
 	}
 }

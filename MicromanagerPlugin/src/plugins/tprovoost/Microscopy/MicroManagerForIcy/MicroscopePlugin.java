@@ -3,6 +3,7 @@ package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 import icy.plugin.abstract_.PluginActionable;
 import icy.system.thread.ThreadUtil;
 
+import org.micromanager.utils.PropertyItem;
 import org.micromanager.utils.StateItem;
 
 /**
@@ -98,7 +99,7 @@ public abstract class MicroscopePlugin extends PluginActionable {
 	 * @param item
 	 * @throws Exception
 	 */
-	public abstract void notifyConfigAboutToChange(StateItem item) throws Exception;
+	public abstract void notifyConfigAboutToChange(PropertyItem item) throws Exception;
 
 	/**
 	 * Called after configuration is changed.
@@ -107,7 +108,7 @@ public abstract class MicroscopePlugin extends PluginActionable {
 	 * @throws Exception
 	 * @see notifyConfigAboutToChange()
 	 */
-	public abstract void notifyConfigChanged(StateItem item) throws Exception;
+	public abstract void notifyConfigChanged(PropertyItem item) throws Exception;
 
 	/**
 	 * Called when main gui is closed

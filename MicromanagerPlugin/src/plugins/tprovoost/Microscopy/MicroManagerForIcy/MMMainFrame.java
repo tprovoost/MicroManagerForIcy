@@ -76,22 +76,25 @@ import javax.swing.table.AbstractTableModel;
 import mmcorej.CMMCore;
 import mmcorej.DeviceType;
 import mmcorej.MMCoreJ;
+import mmcorej.MMEventCallback;
 import mmcorej.StrVector;
 import mmcorej.TaggedImage;
 
 import org.json.JSONObject;
 import org.micromanager.AcqControlDlg;
 import org.micromanager.CalibrationListDlg;
+import org.micromanager.ConfigGroupPad;
 import org.micromanager.PositionListDlg;
+import org.micromanager.PropertyEditor;
 import org.micromanager.acquisition.MMAcquisition;
 import org.micromanager.api.AcquisitionEngine;
 import org.micromanager.api.Autofocus;
-import org.micromanager.api.DeviceControlGUI;
 import org.micromanager.api.ImageCache;
 import org.micromanager.api.MMListenerInterface;
 import org.micromanager.api.ScriptInterface;
-import org.micromanager.conf.MMConfigFileException;
-import org.micromanager.conf.MicroscopeModel;
+import org.micromanager.conf2.ConfiguratorDlg2;
+import org.micromanager.conf2.MMConfigFileException;
+import org.micromanager.conf2.MicroscopeModel;
 import org.micromanager.navigation.PositionList;
 import org.micromanager.utils.AutofocusManager;
 import org.micromanager.utils.ContrastSettings;
@@ -101,9 +104,6 @@ import org.micromanager.utils.ReportingUtils;
 import org.micromanager.utils.StateItem;
 
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigButtonsPanel;
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigGroupPad;
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.FakeScriptInterfacer;
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.PropertyEditor;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.StageMover;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.ColorEditor;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.ColorRenderer;
@@ -117,7 +117,7 @@ import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.MicroscopePainte
  * 
  * @author Thomas Provoost
  */
-public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInterface {
+public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
 	// ------------------
 	// CORE OF MMAINFRAME
@@ -241,6 +241,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	private IcyFrame _progressFrame;
 	/** Progress Bar of the configuration file loading. */
 	private JProgressBar _progressBar;
+	private EventCallBackManager callback;
 
 	/**
 	 * Singleton pattern : private constructor Use getInstance() instead.
@@ -299,6 +300,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 							close();
 							return;
 						}
+						ReportingUtils.setCore(mCore);
 						_afMgr = new AutofocusManager(MMMainFrame.this);
 						PositionList posList = new PositionList();
 
@@ -310,9 +312,11 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 						} catch (MMScriptException e1) {
 							e1.printStackTrace();
 						}
-						posListDlg_ = new PositionListDlg(mCore, new FakeScriptInterfacer(MMMainFrame.this), _posList, null);
-						System.out.println("done !");
+						posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
 						posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
+
+						callback = new EventCallBackManager();
+						mCore.registerCallback(callback);
 
 						setSystemMenuCallback(new MenuCallback() {
 
@@ -321,39 +325,38 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 								JMenu toReturn = MMMainFrame.this.getDefaultSystemMenu();
 								JMenuItem hconfig = new JMenuItem("Configuration Wizard");
 								hconfig.setIcon(new IcyIcon("cog", MENU_ICON_SIZE));
+
 								hconfig.addActionListener(new ActionListener() {
 
 									@Override
 									public void actionPerformed(ActionEvent e) {
-										MessageDialog.showDialog("Not yet implementend", "This feature is not yet available. "
-												+ "Please use Micro-Manager's Hardware Configuration Wizard instead.");
+										if (!_pluginListEmpty
+												&& !ConfirmDialog
+														.confirm("Are you sure ?",
+																"<html>Loading the Configuration Wizard will unload all the devices and pause all running acquisitions.</br> Are you sure you want to continue ?</html>"))
+											return;
+										notifyConfigAboutToChange(null);
+										try {
+											mCore.unloadAllDevices();
+										} catch (Exception e1) {
+											e1.printStackTrace();
+										}
+										String previous_config = _sysConfigFile;
+										ConfiguratorDlg2 configurator = new ConfiguratorDlg2(mCore, _sysConfigFile);
+										configurator.setVisible(true);
+										String res = configurator.getFileName();
+										if (_sysConfigFile == "" || _sysConfigFile == res || res == "") {
+											_sysConfigFile = previous_config;
+										} else {
+											LoadFrame frame = LoadFrame.getInstance();
+											frame.loadFile(_sysConfigFile);
+											if (ConfirmDialog.confirm("Launch new configuration", "Do you want to launch the new configuration?"))
+												loadConfig();
+										}
+										refreshGUI();
+										notifyConfigChanged(null);
 									}
 								});
-
-								/*
-								 * hconfig.addActionListener(new
-								 * ActionListener() {
-								 * 
-								 * @Override public void
-								 * actionPerformed(ActionEvent e) { if
-								 * (!_pluginListEmpty && !ConfirmDialog
-								 * .confirm("Are you sure ?",
-								 * "<html>Loading the Configuration Wizard will unload all the devices and pause all running acquisitions.</br> Are you sure you want to continue ?</html>"
-								 * )) return;
-								 * notifyPluginsConfigAboutToChange(null); try {
-								 * core.unloadAllDevices(); } catch (Exception
-								 * e1) { e1.printStackTrace(); } String
-								 * previous_config = _sysConfigFile;
-								 * ConfiguratorDialog configurator = new
-								 * ConfiguratorDialog(core, _sysConfigFile);
-								 * configurator.setVisible(true); String res =
-								 * configurator.getFileName(); if
-								 * (_sysConfigFile == "" || _sysConfigFile ==
-								 * res || res == "") { _sysConfigFile =
-								 * previous_config; loadConfig(); }
-								 * refreshGUI();
-								 * notifyPluginsConfigChanged(null); } });
-								 */
 
 								JMenuItem menuPxSizeConfigItem = new JMenuItem("Pixel Size Config");
 								menuPxSizeConfigItem.setIcon(new IcyIcon("link", MENU_ICON_SIZE));
@@ -364,7 +367,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 									public void actionPerformed(ActionEvent e) {
 										CalibrationListDlg dlg = new CalibrationListDlg(mCore);
 										dlg.setDefaultCloseOperation(2);
-										dlg.setParentGUI(new FakeScriptInterfacer(MMMainFrame.this));
+										dlg.setParentGUI(MMMainFrame.this);
 										dlg.setVisible(true);
 										dlg.addWindowListener(new WindowAdapter() {
 											@Override
@@ -528,7 +531,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 						saveConfigButton_ = new JButton("Save Button");
 
 						// SETUP
-						_groupPad = new ConfigGroupPad(MMMainFrame.this);
+						_groupPad = new ConfigGroupPad();
+						_groupPad.setParentGUI(MMMainFrame.this);
 						_groupPad.setFont(new Font("", 0, 10));
 						_groupPad.setCore(mCore);
 						_groupPad.setParentGUI(MMMainFrame.this);
@@ -727,12 +731,20 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 						// EDITOR
 						// will refresh the data and verify if any change
 						// occurs.
-						editor = new PropertyEditor(MMMainFrame.this);
+						// editor = new PropertyEditor(MMMainFrame.this);
+						// editor.setCore(mCore);
+						// editor.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+						// editor.addToMainDesktopPane();
+						// editor.refresh();
+						// editor.start();
+
+						editor = new PropertyEditor();
+						editor.setGui(MMMainFrame.this);
 						editor.setCore(mCore);
 						editor.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-						editor.addToMainDesktopPane();
-						editor.refresh();
-						editor.start();
+						// editor.addToMainDesktopPane();
+						// editor.refresh();
+						// editor.start();
 
 						add(_mainPanel);
 						initializeGUI();
@@ -820,7 +832,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 				e.printStackTrace();
 			}
 		}
-		LoadFrame loadingFrame = new LoadFrame();
+		LoadFrame loadingFrame = LoadFrame.getInstance();
 		int returnVal = loadingFrame.showDialog();
 		if (returnVal == 0)
 			_sysConfigFile = loadingFrame.getPath();
@@ -842,6 +854,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 								loadConfig();
 							}
 						});
+					} else {
+						instancing = false;
+						instanced = false;
 					}
 				} else {
 					_isConfigLoaded = true;
@@ -1124,9 +1139,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 		if (painterPreferences != null)
 			painterPreferences.saveColors();
 		_pluginListEmpty = true;
-		if (editor != null)
-			editor.stop();
-		StageMover.stopCoordinatesThread();
+		// if (editor != null)
+		// editor.stop();
 		onClosed();
 		removeFromMainDesktopPane();
 		setVisible(false);
@@ -1137,6 +1151,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	@Override
 	public void onClosed() {
 		if (mCore != null) {
+			callback.delete();
 			String filterBlockGroup = mCore.getCurrentFilterBlockGroup();
 			if (filterBlockGroup != null)
 				_prefs.put(PREFS_FB_GROUP, filterBlockGroup);
@@ -1236,6 +1251,14 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 
 	@Override
 	public void enableLiveMode(boolean flag) {
+		try {
+			if (flag)
+				mCore.startContinuousSequenceAcquisition(0.0D);
+			else
+				mCore.stopSequenceAcquisition();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -1410,7 +1433,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	@Override
 	public void showXYPositionList() {
 		if (posListDlg_ == null) {
-			posListDlg_ = new PositionListDlg(mCore, new FakeScriptInterfacer(MMMainFrame.this), _posList, null);
+			posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
 			posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 		}
 		posListDlg_.setVisible(true);
@@ -1651,13 +1674,13 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	 * @param item
 	 *            : item which is going to change.
 	 */
-	public void notifyConfigAboutToChange(StateItem item) {
+	@Override
+	public void notifyConfigAboutToChange(PropertyItem item) {
 		if (!instanced)
 			return;
 		if (!_isConfigLoaded)
 			return;
-		editor.pauseThread();
-		StageMover.setPauseThread(true);
+		// editor.pauseThread();
 		ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
 		for (MicroscopePlugin p : _list_plugin) {
 			try {
@@ -1671,8 +1694,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 		for (MicroscopePlugin p : todeletelist) {
 			_list_plugin.remove(p);
 		}
-		editor.resumeThread();
-		StageMover.setPauseThread(true);
 	}
 
 	/**
@@ -1685,7 +1706,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	 * @param item
 	 *            : item changed.
 	 */
-	public void notifyConfigChanged(final StateItem item) {
+	@Override
+	public void notifyConfigChanged(final PropertyItem item) {
 		if (!instanced)
 			return;
 		if (!_isConfigLoaded)
@@ -1702,24 +1724,27 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 					ThreadUtil.invokeNow(new Runnable() {
 						@Override
 						public void run() {
-							if (advancedDlg.waitingForObjectiveChange) {
-								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
-										+ "</b></div>   as your Objective Turret configuration ?</html>")) {
-									mCore.setCurrentObjectiveTurretGroup(item.group);
-									String res = mCore.getCurrentObjectiveTurretGroup();
-									if (res != null)
-										advancedDlg.lblCurrentObjectiveTurretGroup.setText("<html><b>" + res + "</b></html>");
+							if (item instanceof StateItem) {
+								StateItem sitem = (StateItem) item;
+								if (advancedDlg.waitingForObjectiveChange) {
+									if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + sitem.group
+											+ "</b></div>   as your Objective Turret configuration ?</html>")) {
+										mCore.setCurrentObjectiveTurretGroup(sitem.group);
+										String res = mCore.getCurrentObjectiveTurretGroup();
+										if (res != null)
+											advancedDlg.lblCurrentObjectiveTurretGroup.setText("<html><b>" + res + "</b></html>");
+									}
+									advancedDlg.waitingForObjectiveChange = false;
+								} else if (advancedDlg.waitingForBlockChange) {
+									if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + sitem.group
+											+ "</b></div>  as your Filter Block configuration ?</html>")) {
+										mCore.setCurrentFilterBlockGroup(sitem.group);
+										String res = mCore.getCurrentFilterBlockGroup();
+										if (res != null)
+											advancedDlg.lblCurrentFilterBLockGroup.setText("<html><b>" + res + "</b></html>");
+									}
+									advancedDlg.waitingForBlockChange = false;
 								}
-								advancedDlg.waitingForObjectiveChange = false;
-							} else if (advancedDlg.waitingForBlockChange) {
-								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
-										+ "</b></div>  as your Filter Block configuration ?</html>")) {
-									mCore.setCurrentFilterBlockGroup(item.group);
-									String res = mCore.getCurrentFilterBlockGroup();
-									if (res != null)
-										advancedDlg.lblCurrentFilterBLockGroup.setText("<html><b>" + res + "</b></html>");
-								}
-								advancedDlg.waitingForBlockChange = false;
 							}
 						}
 					});
@@ -2590,80 +2615,63 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 
 	@Override
 	public void addMMListener(MMListenerInterface mmlistenerinterface) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void removeMMListener(MMListenerInterface mmlistenerinterface) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public boolean displayImage(TaggedImage taggedimage) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean isLiveModeOn() {
-		// TODO Auto-generated method stub
-		return false;
+		return mCore.isSequenceRunning();
 	}
 
 	@Override
 	public Rectangle getROI() throws MMScriptException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void setROI(Rectangle rectangle) throws MMScriptException {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public ImageCache getAcquisitionImageCache(String s) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void markCurrentPosition() {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public AcqControlDlg getAcqDlg() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public PositionListDlg getXYPosListDlg() {
-		// TODO Auto-generated method stub
-		return null;
+		return posListDlg_;
 	}
 
 	@Override
 	public boolean isAcquisitionRunning() {
-		// TODO Auto-generated method stub
-		return false;
+		return mCore != null && mCore.isSequenceRunning();
 	}
 
 	@Override
 	public boolean versionLessThan(String s) throws MMScriptException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public void logStartupProperties() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -2673,31 +2681,65 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 
 	@Override
 	public boolean isBurstAcquisitionRunning() throws MMScriptException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public void startAcquisition() throws MMScriptException {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void startBurstAcquisition() throws MMScriptException {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void openAcquisitionData(String s, boolean flag) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void enableRoiButtons(boolean flag) {
-		// TODO Auto-generated method stub
+	}
 
+	public class EventCallBackManager extends MMEventCallback {
+
+		@Override
+		public void onPropertyChanged(String s, String s1, String s2) {
+			// handle property changed
+		}
+
+		@Override
+		public void onPixelSizeChanged(double d) {
+			// handle pixel size changed
+		}
+
+		@Override
+		public void onConfigGroupChanged(String s, String s1) {
+			// handle config group changed
+			System.out.println(s + " / " + s1);
+		}
+
+		@Override
+		public void onPropertiesChanged() {
+			// handle properties changed
+		}
+
+		@Override
+		public void onStagePositionChanged(String s, double z) {
+			StageMover.onStagePositionChanged(s, z);
+		}
+
+		@Override
+		public void onStagePositionChangedRelative(String s, double z) {
+			StageMover.onStagePositionChangedRelative(s, z);
+		}
+
+		public void onXYStagePositionChanged(String s, double d, double d1) {
+			StageMover.onXYStagePositionChanged(s, d, d1);
+		};
+
+		@Override
+		public void onXYStagePositionChangedRelative(String s, double d, double d1) {
+			StageMover.onXYStagePositionChangedRelative(s, d, d1);
+		}
 	}
 }
