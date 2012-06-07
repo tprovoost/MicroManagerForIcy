@@ -4,7 +4,6 @@ import icy.plugin.abstract_.PluginActionable;
 import icy.system.thread.ThreadUtil;
 
 import org.micromanager.utils.PropertyItem;
-import org.micromanager.utils.StateItem;
 
 /**
  * This is the class to inherit in order to create a Microscope Plugin. Instead

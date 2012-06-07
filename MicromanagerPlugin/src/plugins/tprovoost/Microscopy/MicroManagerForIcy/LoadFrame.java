@@ -305,7 +305,6 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 
 	public int showDialog() {
 		setVisible(true);
-		removeAll();
 		return _retval;
 	}
 

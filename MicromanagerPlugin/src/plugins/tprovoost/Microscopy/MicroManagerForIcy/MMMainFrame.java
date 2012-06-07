@@ -348,10 +348,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 										if (_sysConfigFile == "" || _sysConfigFile == res || res == "") {
 											_sysConfigFile = previous_config;
 										} else {
+											_sysConfigFile = res;
 											LoadFrame frame = LoadFrame.getInstance();
 											frame.loadFile(_sysConfigFile);
-											if (ConfirmDialog.confirm("Launch new configuration", "Do you want to launch the new configuration?"))
-												loadConfig();
+											loadConfig(true);
 										}
 										refreshGUI();
 										notifyConfigChanged(null);
@@ -799,13 +799,17 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 		}
 	}
 
+	private void loadConfig() {
+		loadConfig(false);
+	}
+
 	/**
 	 * Loads configuration using a JFileChooser Shows a Dialog if a
 	 * configuration already exists.
 	 */
-	private void loadConfig() {
+	private void loadConfig(boolean force) {
 		_isConfigLoaded = false;
-		if (mCore != null) {
+		if (mCore != null && !force) {
 			if (!ConfirmDialog.confirm("Are you sure ", "Do you want to load another configuration ?")) {
 				return;
 			}
@@ -832,10 +836,12 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 				e.printStackTrace();
 			}
 		}
-		LoadFrame loadingFrame = LoadFrame.getInstance();
-		int returnVal = loadingFrame.showDialog();
-		if (returnVal == 0)
-			_sysConfigFile = loadingFrame.getPath();
+		if (!force) {
+			LoadFrame loadingFrame = LoadFrame.getInstance();
+			int returnVal = loadingFrame.showDialog();
+			if (returnVal == 0)
+				_sysConfigFile = loadingFrame.getPath();
+		}
 		setVisible(false);
 		_progressFrame.center();
 		_progressFrame.setVisible(true);
