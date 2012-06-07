@@ -89,7 +89,7 @@ public class PainterInfoConfig extends MicroscopePainter {
 		// --------------------------
 		if (nbComponents == 0)
 			return;
-		g.setColor(prefs.getColor("Text Background"));
+		g.setColor(prefs.getColor("Background"));
 		g.fillRect(0, 0, largestComponentWidth + fh * 2, fh * nbComponents + fh / 2);
 		g.setColor(prefs.getColor("Text"));
 		int i = 1;
@@ -111,6 +111,7 @@ public class PainterInfoConfig extends MicroscopePainter {
 	public void keyPressed(KeyEvent e, Point2D imagePoint, IcyCanvas canvas) {
 		if (e.isAltDown() && e.getKeyCode() == KeyEvent.VK_H) {
 			displayHelp = !displayHelp;
+			changed();
 		}
 	}
 }

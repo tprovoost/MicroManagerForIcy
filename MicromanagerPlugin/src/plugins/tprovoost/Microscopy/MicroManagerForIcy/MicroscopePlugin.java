@@ -50,7 +50,7 @@ public abstract class MicroscopePlugin extends PluginActionable {
 				while (!MMMainFrame.instanced()) {
 					if (!MMMainFrame.isInstancing())
 						return;
-					Thread.yield();
+					ThreadUtil.sleep(10);
 				}
 				ThreadUtil.invokeLater(new Runnable() {
 					@Override

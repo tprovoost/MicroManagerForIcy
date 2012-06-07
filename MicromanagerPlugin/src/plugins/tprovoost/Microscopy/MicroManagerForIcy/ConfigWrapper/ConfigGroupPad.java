@@ -207,10 +207,7 @@ public class ConfigGroupPad extends JScrollPane {
 								if (parentGUI_ != null) {
 									org.micromanager.utils.ContrastSettings ctr = parentGUI_.getContrastSettings();
 									if (ctr != null)
-										if (parentGUI_.is16bit())
-											csFound.contrast16_ = ctr;
-										else
-											csFound.contrast8_ = ctr;
+										csFound.contrast_ = ctr;
 									channels_.add(csFound);
 								}
 							}

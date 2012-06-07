@@ -1,7 +1,7 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
-import icy.common.listener.AcceptListener;
 import icy.common.MenuCallback;
+import icy.common.listener.AcceptListener;
 import icy.gui.component.IcyLogo;
 import icy.gui.dialog.ConfirmDialog;
 import icy.gui.dialog.MessageDialog;
@@ -20,6 +20,7 @@ import icy.preferences.XMLPreferences.XMLPreferencesRoot;
 import icy.resource.icon.IcyIcon;
 import icy.sequence.Sequence;
 import icy.system.thread.ThreadUtil;
+import ij.gui.ImageWindow;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -28,6 +29,7 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -63,6 +65,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
+import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TableModelEvent;
@@ -70,25 +73,36 @@ import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 
+import mmcorej.CMMCore;
 import mmcorej.DeviceType;
 import mmcorej.MMCoreJ;
 import mmcorej.StrVector;
+import mmcorej.TaggedImage;
 
+import org.json.JSONObject;
+import org.micromanager.AcqControlDlg;
 import org.micromanager.CalibrationListDlg;
 import org.micromanager.PositionListDlg;
+import org.micromanager.acquisition.MMAcquisition;
+import org.micromanager.api.AcquisitionEngine;
+import org.micromanager.api.Autofocus;
 import org.micromanager.api.DeviceControlGUI;
+import org.micromanager.api.ImageCache;
+import org.micromanager.api.MMListenerInterface;
+import org.micromanager.api.ScriptInterface;
 import org.micromanager.conf.MMConfigFileException;
 import org.micromanager.conf.MicroscopeModel;
 import org.micromanager.navigation.PositionList;
+import org.micromanager.utils.AutofocusManager;
 import org.micromanager.utils.ContrastSettings;
 import org.micromanager.utils.MMScriptException;
 import org.micromanager.utils.PropertyItem;
 import org.micromanager.utils.ReportingUtils;
 import org.micromanager.utils.StateItem;
 
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.AutofocusManager;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigButtonsPanel;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigGroupPad;
+import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.FakeScriptInterfacer;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.PropertyEditor;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.StageMover;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.ColorEditor;
@@ -103,7 +117,7 @@ import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.MicroscopePainte
  * 
  * @author Thomas Provoost
  */
-public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
+public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInterface {
 
 	// ------------------
 	// CORE OF MMAINFRAME
@@ -245,7 +259,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 		// --------------
 		// PROGRESS FRAME
 		// --------------
-		_progressFrame = new IcyFrame();
+		_progressFrame = new IcyFrame("", false, false, false, false);
 		_progressBar = new JProgressBar();
 		_progressBar.setString("Please wait while loading...");
 		_progressBar.setStringPainted(true);
@@ -285,7 +299,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 							close();
 							return;
 						}
-						_afMgr = new AutofocusManager(mCore);
+						_afMgr = new AutofocusManager(MMMainFrame.this);
 						PositionList posList = new PositionList();
 
 						_camera_label = MMCoreJ.getG_Keyword_CameraName();
@@ -296,7 +310,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						} catch (MMScriptException e1) {
 							e1.printStackTrace();
 						}
-						posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
+						posListDlg_ = new PositionListDlg(mCore, new FakeScriptInterfacer(MMMainFrame.this), _posList, null);
+						System.out.println("done !");
 						posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 
 						setSystemMenuCallback(new MenuCallback() {
@@ -310,7 +325,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 									@Override
 									public void actionPerformed(ActionEvent e) {
-										MessageDialog.showDialog("Not yet implementend", "This feature is not yet available. " + "Please use Micro-Manager's Hardware Configuration Wizard instead.");
+										MessageDialog.showDialog("Not yet implementend", "This feature is not yet available. "
+												+ "Please use Micro-Manager's Hardware Configuration Wizard instead.");
 									}
 								});
 
@@ -348,7 +364,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 									public void actionPerformed(ActionEvent e) {
 										CalibrationListDlg dlg = new CalibrationListDlg(mCore);
 										dlg.setDefaultCloseOperation(2);
-										dlg.setParentGUI(MMMainFrame.this);
+										dlg.setParentGUI(new FakeScriptInterfacer(MMMainFrame.this));
 										dlg.setVisible(true);
 										dlg.addWindowListener(new WindowAdapter() {
 											@Override
@@ -391,9 +407,10 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 									 */
 									@Override
 									public void actionPerformed(ActionEvent e) {
-										new ToolTipFrame("<html><h3>About Advanced Config</h3><p>Advanced Configuration is a tool"
+										new ToolTipFrame("<html><h3>About Advanced Config</h3><p>Advanced Configuration is a tool "
 												+ "in which you fill some data <br/>about your configuration that some "
-												+ "plugins may need to access to.<br/> Exemple: the real values of the magnification" + "of your objectives.</p></html>", "MM4IcyAdvancedConfig");
+												+ "plugins may need to access to.<br/> Exemple: the real values of the magnification" + "of your objectives.</p></html>",
+												"MM4IcyAdvancedConfig");
 										if (advancedDlg == null)
 											advancedDlg = new AdvancedConfigurationDialog();
 										advancedDlg.setVisible(!advancedDlg.isVisible());
@@ -430,14 +447,16 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 										JPanel panel_container = new JPanel();
 										panel_container.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 										JPanel center = new JPanel(new BorderLayout());
-										final JLabel value = new JLabel("<html><body>" + "<h2>About</h2><p>MicroManager for Icy is being developed by Thomas Provoost."
+										final JLabel value = new JLabel("<html><body>" + "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
 												+ "<br/>Copyright 2011, Institut Pasteur</p><br/>"
 												+ "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
-												+ "<i>This software is distributed free of charge in the hope that it will be<br/>" + "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
+												+ "<i>This software is distributed free of charge in the hope that it will be<br/>"
+												+ "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
 												+ "warranty of merchantability or fitness for a particular purpose. In no<br/>"
 												+ "event shall the copyright owner or contributors be liable for any direct,<br/>"
 												+ "indirect, incidental spacial, examplary, or consequential damages.<br/>"
-												+ "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>" + "2010. All rights reserved.</i>" + "</p>" + "</body></html>");
+												+ "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>" + "2010. All rights reserved.</i>" + "</p>"
+												+ "</body></html>");
 										JLabel link = new JLabel("<html><a href=\"\">For more information, please follow this link.</a></html>");
 										link.addMouseListener(new MouseAdapter() {
 											@Override
@@ -474,7 +493,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 										dialog.setResizable(false);
 										dialog.setVisible(true);
 										dialog.pack();
-										dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight() / 2);
+										dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2,
+												(int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight() / 2);
 										dialog.setLocationRelativeTo(mainFrame);
 									}
 								});
@@ -650,7 +670,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 									int col = tablemodelevent.getColumn();
 									String columnName = tableModel.getColumnName(col);
 									String painterName = (String) tableModel.getValueAt(row, 0);
-									;
 									if (columnName.contains("Color")) {
 										// New color value
 										int alpha = painterPreferences.getColor(painterName).getAlpha();
@@ -696,7 +715,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						painterTable.setDefaultRenderer(Color.class, new ColorRenderer(true));
 						painterTable.setDefaultEditor(Color.class, new ColorEditor());
 
-						painterTable.setDefaultRenderer(JSlider.class, new SliderRenderer(0,255));
+						painterTable.setDefaultRenderer(JSlider.class, new SliderRenderer(0, 255));
 						painterTable.setDefaultEditor(JSlider.class, new SliderEditor());
 
 						_panelColorChooser.add(scrollPane);
@@ -710,6 +729,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						// occurs.
 						editor = new PropertyEditor(MMMainFrame.this);
 						editor.setCore(mCore);
+						editor.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 						editor.addToMainDesktopPane();
 						editor.refresh();
 						editor.start();
@@ -755,13 +775,11 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			for (Viewer v : s.getViewers()) {
 				for (LUTBand lutband : v.getLut().getLutBands()) {
 					if (_cbAbsoluteHisto.isSelected()) {
-						s.setComponentAbsBoundsAutoUpdate(false);
-						s.setComponentUserBoundsAutoUpdate(false);
+						s.setAutoUpdateChannelBounds(false);
 						double maxvalue = Math.pow(2, _comboBitDepth.getSelectedIndex() + 8);
 						lutband.getScaler().setAbsLeftRightIn(0, maxvalue);
 					} else {
-						s.setComponentAbsBoundsAutoUpdate(true);
-						s.setComponentUserBoundsAutoUpdate(true);
+						s.setAutoUpdateChannelBounds(true);
 						lutband.getScaler().setAbsLeftRightIn(lutband.getMin(), lutband.getMax());
 					}
 				}
@@ -945,6 +963,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			}
 			mCore.setCurrentObjectiveTurretGroup(currentObjective, hashMag);
 		}
+		StageMover.loadPreferences(_prefs);
 	}
 
 	/**
@@ -963,11 +982,13 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 		JLabel lbl_html = new JLabel("<html>" + "<h2>Unable to load library</h2>" + "<br/><b>What happened ?</b>"
 				+ "<p>The library is a file used by µManager to interact with the devices. Each device needs a specific file in order <br/>"
-				+ "to work properly with the system. If only one file is missing, this error occurs.</p>" + "<b>To avoid getting this problem again, please acknowledge the following steps: </b>"
-				+ "<ol><li>Do you have MicroManager 1.4 installed ? If not, please install it via the button below.</li>"
+				+ "to work properly with the system. If only one file is missing, this error occurs.</p>"
+				+ "<b>To avoid getting this problem again, please acknowledge the following steps: </b>"
+				+ "<ol><li>Do you have Micro-Manager 1.4 installed ? If not, please install it via the button below.</li>"
 				+ "<li>Check the application directory of Icy. You should find a file named:  " + "<ul><li>on Windows: MMCoreJ_wrap</li><li>on Mac: libMMCoreJ_wrap</li></ul>"
 				+ "<li>Plus : you should have a file for each of your devices starting with the name:" + "<ul><li>on Windows: mmgr_dal_</li><li>on Mac: libmmgr_dal_</li></ul>"
-				+ "<li>If you don't have these files, please copy (not move) them from the µManager application directory<br/>" + "to your Icy application directory.</li></ol></html>");
+				+ "<li>If you don't have these files, please copy (not move) them from the µManager application directory<br/>"
+				+ "to your Icy application directory.</li></ol></html>");
 		panel_main.add(lbl_html, BorderLayout.CENTER);
 		panel_main.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
@@ -1130,6 +1151,16 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 					}
 				}
 			}
+			StrVector shutters = mCore.getLoadedDevicesOfType(DeviceType.ShutterDevice);
+			for (String s : shutters) {
+				try {
+					mCore.setShutterDevice(s);
+					mCore.setShutterOpen(false);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+			}
 			if (mCore.isSequenceRunning())
 				try {
 					mCore.stopSequenceAcquisition();
@@ -1205,15 +1236,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 	@Override
 	public void enableLiveMode(boolean flag) {
-	}
-
-	@Override
-	public org.micromanager.utils.AutofocusManager getAutofocusManager() {
-		return null;
-	}
-
-	public AutofocusManager getAutoFocusManager() {
-		return _afMgr;
 	}
 
 	/**
@@ -1320,7 +1342,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				_tabbedPanel.add("Running Acquisitions", _panelAcquisitions);
 				_tabbedPanel.add("Painter Settings", panelPainterSettingsContainer);
 
-				final IcyLogo logo_title = new IcyLogo("MicroManager for Icy");
+				final IcyLogo logo_title = new IcyLogo("Micro-Manager for Icy");
 				logo_title.setPreferredSize(new Dimension(200, 80));
 				_mainPanel.add(_tabbedPanel, BorderLayout.CENTER);
 				_mainPanel.add(logo_title, BorderLayout.NORTH);
@@ -1331,16 +1353,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 
 	@Override
 	public boolean is16bit() {
-		return false;
-	}
-
-	@Override
-	public boolean isBurstAcquisitionRunning() throws MMScriptException {
-		return false;
-	}
-
-	@Override
-	public void loadAcquisition(String s) throws MMScriptException {
+		return true;
 	}
 
 	@Override
@@ -1365,10 +1378,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	}
 
 	@Override
-	public void runBurstAcquisition() throws MMScriptException {
-	}
-
-	@Override
 	public void setBackgroundStyle(String s) {
 	}
 
@@ -1389,34 +1398,22 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	}
 
 	@Override
-	public void setPositionList(PositionList positionlist) throws MMScriptException {
-		_posList = PositionList.newInstance(positionlist);
-	}
-	
 	public PositionList getPositionList() {
 		return _posList;
 	}
 
+	@Override
+	public void setPositionList(PositionList positionlist) throws MMScriptException {
+		_posList = PositionList.newInstance(positionlist);
+	}
 
 	@Override
 	public void showXYPositionList() {
 		if (posListDlg_ == null) {
-			posListDlg_ = new PositionListDlg(mCore, this, _posList, null);
+			posListDlg_ = new PositionListDlg(mCore, new FakeScriptInterfacer(MMMainFrame.this), _posList, null);
 			posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 		}
 		posListDlg_.setVisible(true);
-	}
-
-	@Override
-	public void sleep(long l) throws MMScriptException {
-	}
-
-	@Override
-	public void startAcquisition() throws MMScriptException {
-	}
-
-	@Override
-	public void startBurstAcquisition() throws MMScriptException {
 	}
 
 	@Override
@@ -1426,13 +1423,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	@Override
 	public void updateGUI(boolean updateConfigPadStructure) {
 
-		if (updateConfigPadStructure) {
-			if (_groupPad != null)
+		if (updateConfigPadStructure && _groupPad != null) {
+			if (_list_progress.size() == 0)
 				_groupPad.refreshStructure();
-			try {
-				_txtExposure.setText("" + mCore.getExposure());
-			} catch (Exception e) {
-			}
 		}
 		_panelAcquisitions.removeAll();
 		if (_list_progress.size() == 0) {
@@ -1580,8 +1573,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 	 * Refreshes the group pad when a plugin modified the config.
 	 */
 	public void configChanged() {
-		_groupPad.refreshStructure();
-		refreshGUI();
+		updateGUI(true);
 	}
 
 	/**
@@ -1606,7 +1598,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				++i;
 		}
 		if (i != 0)
-			name = name + i;
+			name = name + " (" + (i + 1) + ")";
 		final String namefinal = name;
 		ThreadUtil.invokeNow(new Runnable() {
 
@@ -1711,19 +1703,21 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 						@Override
 						public void run() {
 							if (advancedDlg.waitingForObjectiveChange) {
-								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group + "</b></div>   as your Objective Turret configuration ?</html>")) {
+								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
+										+ "</b></div>   as your Objective Turret configuration ?</html>")) {
 									mCore.setCurrentObjectiveTurretGroup(item.group);
 									String res = mCore.getCurrentObjectiveTurretGroup();
 									if (res != null)
-										advancedDlg.lblCurrentObjectiveTurretGroup.setText("<html><b>"+ res + "</b></html>");
+										advancedDlg.lblCurrentObjectiveTurretGroup.setText("<html><b>" + res + "</b></html>");
 								}
 								advancedDlg.waitingForObjectiveChange = false;
 							} else if (advancedDlg.waitingForBlockChange) {
-								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group + "</b></div>  as your Filter Block configuration ?</html>")) {
+								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
+										+ "</b></div>  as your Filter Block configuration ?</html>")) {
 									mCore.setCurrentFilterBlockGroup(item.group);
 									String res = mCore.getCurrentFilterBlockGroup();
 									if (res != null)
-										advancedDlg.lblCurrentFilterBLockGroup.setText("<html><b>"+ res + "</b></html>");
+										advancedDlg.lblCurrentFilterBLockGroup.setText("<html><b>" + res + "</b></html>");
 								}
 								advancedDlg.waitingForBlockChange = false;
 							}
@@ -1965,7 +1959,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			super(Icy.getMainInterface().getMainFrame(), "Advanced Configuration Dialog", false);
 
 			JPanel panelDevices = new JPanel(new GridLayout(2, 3));
-			panelDevices.setBorder(BorderFactory.createEmptyBorder(20, 10, 10, 10));
+			panelDevices.setBorder(BorderFactory.createEmptyBorder(20, 10, 4, 10));
 
 			// OBJECTIVES TURRET
 			panelDevices.add(new JLabel("Objectives Turret Config: "));
@@ -2009,6 +2003,65 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			});
 			panelDevices.add(btnSetFilterBlock);
 
+			JPanel panelInversions = new JPanel(new GridLayout(4, 1));
+			panelInversions.setBorder(BorderFactory.createEmptyBorder(0, 4, 4, 4));
+			JPanel panelInvertX = new JPanel();
+			panelInvertX.setLayout(new BoxLayout(panelInvertX, BoxLayout.X_AXIS));
+			final JCheckBox cboxInvertX = new JCheckBox("Invert X");
+			cboxInvertX.setSelected(StageMover.isInvertX());
+			cboxInvertX.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					StageMover.setInvertX(cboxInvertX.isSelected());
+				}
+			});
+			panelInvertX.add(cboxInvertX);
+
+			JPanel panelInvertY = new JPanel();
+			panelInvertY.setLayout(new BoxLayout(panelInvertY, BoxLayout.X_AXIS));
+			final JCheckBox cboxInvertY = new JCheckBox("Invert Y");
+			cboxInvertY.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					StageMover.setInvertY(cboxInvertY.isSelected());
+					cboxInvertY.setSelected(StageMover.isInvertY());
+				}
+			});
+			panelInvertY.add(cboxInvertY);
+
+			JPanel panelInvertZ = new JPanel();
+			panelInvertZ.setLayout(new BoxLayout(panelInvertZ, BoxLayout.X_AXIS));
+			final JCheckBox cboxInvertZ = new JCheckBox("Invert Z");
+			cboxInvertZ.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					StageMover.setInvertZ(cboxInvertZ.isSelected());
+					cboxInvertZ.setSelected(StageMover.isInvertZ());
+				}
+			});
+			panelInvertZ.add(cboxInvertZ);
+
+			JPanel panelSwitchXY = new JPanel();
+			panelSwitchXY.setLayout(new BoxLayout(panelSwitchXY, BoxLayout.X_AXIS));
+			final JCheckBox cboxSwitchXY = new JCheckBox("Switch X/Y");
+			cboxSwitchXY.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					StageMover.setSwitchXY(cboxSwitchXY.isSelected());
+					cboxSwitchXY.setSelected(StageMover.isSwitchXY());
+				}
+			});
+			panelSwitchXY.add(cboxSwitchXY);
+
+			panelInversions.add(panelInvertX);
+			panelInversions.add(panelInvertY);
+			panelInversions.add(panelInvertZ);
+			panelInversions.add(panelSwitchXY);
+
 			JPanel mainPanel = new JPanel(new BorderLayout());
 			JButton btnClose = new JButton("Close");
 			btnClose.setSize(30, 20);
@@ -2026,7 +2079,12 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 			panelClose.add(btnClose);
 			panelClose.add(Box.createHorizontalGlue());
 
-			mainPanel.add(panelDevices, BorderLayout.CENTER);
+			JPanel panelCenter = new JPanel();
+			panelCenter.setLayout(new BoxLayout(panelCenter, BoxLayout.Y_AXIS));
+			panelCenter.add(panelDevices);
+			panelCenter.add(panelInversions);
+
+			mainPanel.add(panelCenter, BorderLayout.CENTER);
 			mainPanel.add(panelClose, BorderLayout.SOUTH);
 			setLayout(new BorderLayout());
 			add(new IcyLogo("Advanced Configuration Dialog"), BorderLayout.NORTH);
@@ -2042,5 +2100,604 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI {
 				}
 			});
 		}
+	}
+
+	/*
+	 * Starting from here, those 99 functions must be implemented according to
+	 * the ScriptInterface of Micro-Manager. Only a few are used, such as
+	 * getAutofocusManager().
+	 */
+
+	@Override
+	public void sleep(long l) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void message(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void clearMessageWindow() throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void snapSingleImage() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void openAcquisition(String s, String s1, int i, int j, int k) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void openAcquisition(String s, String s1, int i, int j, int k, int l) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void openAcquisition(String s, String s1, int i, int j, int k, int l, boolean flag) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void openAcquisition(String s, String s1, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void openAcquisition(String s, String s1, int i, int j, int k, boolean flag) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void openAcquisition(String s, String s1, int i, int j, int k, boolean flag, boolean flag1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public String createAcquisition(JSONObject jsonobject, boolean flag) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getUniqueAcquisitionName(String s) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getCurrentAlbum() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void addToAlbum(TaggedImage taggedimage) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void initializeSimpleAcquisition(String s, int i, int j, int k, int l, int i1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void initializeAcquisition(String s, int i, int j, int k) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void initializeAcquisition(String s, int i, int j, int k, int l) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Boolean acquisitionExists(String s) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void closeAcquisition(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void closeAllAcquisitions() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public MMAcquisition getCurrentAcquisition() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String[] getAcquisitionNames() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MMAcquisition getAcquisition(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void snapAndAddImage(String s, int i, int j, int k) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void snapAndAddImage(String s, int i, int j, int k, int l) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void addImage(String s, Object obj, int i, int j, int k) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void addImage(String s, TaggedImage taggedimage) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void addImage(String s, TaggedImage taggedimage, boolean flag) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void addImage(String s, TaggedImage taggedimage, boolean flag, boolean flag1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public int getAcquisitionImageWidth(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getAcquisitionImageHeight(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getAcquisitionImageBitDepth(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getAcquisitionImageByteDepth(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getAcquisitionMultiCamNumChannels(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setAcquisitionProperty(String s, String s1, String s2) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setAcquisitionSystemState(String s, JSONObject jsonobject) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setAcquisitionSummary(String s, JSONObject jsonobject) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setImageProperty(String s, int i, int j, int k, String s1, String s2) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void runBurstAcquisition() throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void runBurstAcquisition(int i, String s, String s1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void runBurstAcquisition(int i) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void loadBurstAcquisition(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public String runAcquisition() throws MMScriptException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String runAcqusition(String s, String s1) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String runAcquisition(String s, String s1) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void loadAcquisition(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setChannelColor(String s, int i, Color color) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setChannelName(String s, int i, String s1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setChannelContrast(String s, int i, int j, int k) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setContrastBasedOnFrame(String s, int i, int j) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void closeAcquisitionImage5D(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void closeAcquisitionWindow(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public java.awt.geom.Point2D.Double getXYStagePosition() throws MMScriptException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setStagePosition(double d) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setRelativeStagePosition(double d) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setXYStagePosition(double d, double d1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void setRelativeXYStagePosition(double d, double d1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public String getXYStageName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setXYOrigin(double d, double d1) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void saveConfigPresets() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public ImageWindow getImageWin() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ImageWindow getSnapLiveWin() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String installPlugin(String s) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String installPlugin(String s, String s1) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String installAutofocusPlugin(String s) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public CMMCore getMMCore() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Autofocus getAutofocus() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void showAutofocusDialog() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public AcquisitionEngine getAcquisitionEngine() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void logMessage(String s) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void showMessage(String s) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void logError(Exception exception, String s) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void logError(Exception exception) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void logError(String s) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void showError(Exception exception, String s) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void showError(Exception exception) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void showError(String s) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void addMMListener(MMListenerInterface mmlistenerinterface) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void removeMMListener(MMListenerInterface mmlistenerinterface) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public boolean displayImage(TaggedImage taggedimage) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isLiveModeOn() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Rectangle getROI() throws MMScriptException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setROI(Rectangle rectangle) throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public ImageCache getAcquisitionImageCache(String s) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void markCurrentPosition() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public AcqControlDlg getAcqDlg() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PositionListDlg getXYPosListDlg() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isAcquisitionRunning() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean versionLessThan(String s) throws MMScriptException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void logStartupProperties() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public AutofocusManager getAutofocusManager() {
+		return _afMgr;
+	}
+
+	@Override
+	public boolean isBurstAcquisitionRunning() throws MMScriptException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void startAcquisition() throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void startBurstAcquisition() throws MMScriptException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void openAcquisitionData(String s, boolean flag) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void enableRoiButtons(boolean flag) {
+		// TODO Auto-generated method stub
+
 	}
 }
