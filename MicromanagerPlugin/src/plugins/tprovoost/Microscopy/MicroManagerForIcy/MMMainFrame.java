@@ -76,6 +76,7 @@ import javax.swing.table.AbstractTableModel;
 import mmcorej.CMMCore;
 import mmcorej.DeviceType;
 import mmcorej.MMCoreJ;
+import mmcorej.MMEventCallback;
 import mmcorej.StrVector;
 import mmcorej.TaggedImage;
 
@@ -90,6 +91,7 @@ import org.micromanager.api.DeviceControlGUI;
 import org.micromanager.api.ImageCache;
 import org.micromanager.api.MMListenerInterface;
 import org.micromanager.api.ScriptInterface;
+import org.micromanager.conf.ConfiguratorDlg;
 import org.micromanager.conf.MMConfigFileException;
 import org.micromanager.conf.MicroscopeModel;
 import org.micromanager.navigation.PositionList;
@@ -169,6 +171,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	AcceptListener acceptListener;
 	JTable painterTable;
 	AdvancedConfigurationDialog advancedDlg;
+	
 
 	// ------------
 	// PREFERENCES
@@ -241,6 +244,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	private IcyFrame _progressFrame;
 	/** Progress Bar of the configuration file loading. */
 	private JProgressBar _progressBar;
+	
+	private EventCallBackManager callback;
 
 	/**
 	 * Singleton pattern : private constructor Use getInstance() instead.
@@ -310,8 +315,11 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 						} catch (MMScriptException e1) {
 							e1.printStackTrace();
 						}
-						posListDlg_ = new PositionListDlg(mCore, new FakeScriptInterfacer(MMMainFrame.this), _posList, null);
-						System.out.println("done !");
+						posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
+						
+						callback = new EventCallBackManager();
+						mCore.registerCallback(callback);
+						
 						posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 
 						setSystemMenuCallback(new MenuCallback() {
@@ -321,43 +329,61 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 								JMenu toReturn = MMMainFrame.this.getDefaultSystemMenu();
 								JMenuItem hconfig = new JMenuItem("Configuration Wizard");
 								hconfig.setIcon(new IcyIcon("cog", MENU_ICON_SIZE));
-								hconfig.addActionListener(new ActionListener() {
+								// hconfig.addActionListener(new
+								// ActionListener() {
+								//
+								// @Override
+								// public void actionPerformed(ActionEvent e) {
+								// MessageDialog.showDialog("Not yet implementend",
+								// "This feature is not yet available. "
+								// +
+								// "Please use Micro-Manager's Hardware Configuration Wizard instead.");
+								// }
+								// });
 
-									@Override
-									public void actionPerformed(ActionEvent e) {
-										MessageDialog.showDialog("Not yet implementend", "This feature is not yet available. "
-												+ "Please use Micro-Manager's Hardware Configuration Wizard instead.");
-									}
-								});
+								hconfig.addActionListener(new
+										ActionListener() {
 
-								/*
-								 * hconfig.addActionListener(new
-								 * ActionListener() {
-								 * 
-								 * @Override public void
-								 * actionPerformed(ActionEvent e) { if
-								 * (!_pluginListEmpty && !ConfirmDialog
-								 * .confirm("Are you sure ?",
-								 * "<html>Loading the Configuration Wizard will unload all the devices and pause all running acquisitions.</br> Are you sure you want to continue ?</html>"
-								 * )) return;
-								 * notifyPluginsConfigAboutToChange(null); try {
-								 * core.unloadAllDevices(); } catch (Exception
-								 * e1) { e1.printStackTrace(); } String
-								 * previous_config = _sysConfigFile;
-								 * ConfiguratorDialog configurator = new
-								 * ConfiguratorDialog(core, _sysConfigFile);
-								 * configurator.setVisible(true); String res =
-								 * configurator.getFileName(); if
-								 * (_sysConfigFile == "" || _sysConfigFile ==
-								 * res || res == "") { _sysConfigFile =
-								 * previous_config; loadConfig(); }
-								 * refreshGUI();
-								 * notifyPluginsConfigChanged(null); } });
-								 */
+											@Override
+											public void
+													actionPerformed(ActionEvent e) {
+												if
+												(!_pluginListEmpty
+														&& !ConfirmDialog
+																.confirm(
+																		"Are you sure ?",
+																		"<html>Loading the Configuration Wizard will unload all the devices and pause all running acquisitions.</br> Are you sure you want to continue ?</html>"
+																))
+													return;
+												notifyConfigAboutToChange(null);
+												try {
+													mCore.unloadAllDevices();
+												} catch (Exception
+												e1) {
+													e1.printStackTrace();
+												}
+												String
+												previous_config = _sysConfigFile;
+												ConfiguratorDlg configurator = new ConfiguratorDlg(mCore, _sysConfigFile);
+												configurator.setVisible(true);
+												String res =
+														configurator.getFileName();
+												if
+												(_sysConfigFile == "" || _sysConfigFile ==
+														res || res == "") {
+													_sysConfigFile =
+															previous_config;
+													loadConfig();
+												}
+												refreshGUI();
+												notifyConfigChanged(null);
+											}
+										});
 
 								JMenuItem menuPxSizeConfigItem = new JMenuItem("Pixel Size Config");
 								menuPxSizeConfigItem.setIcon(new IcyIcon("link", MENU_ICON_SIZE));
-								menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+								menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.SHIFT_DOWN_MASK
+										| SHORTCUTKEY_MASK));
 								menuPxSizeConfigItem.addActionListener(new ActionListener() {
 
 									@Override
@@ -378,7 +404,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 								});
 
 								JMenuItem loadConfigItem = new JMenuItem("Load Configuration");
-								loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+								loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.SHIFT_DOWN_MASK
+										| SHORTCUTKEY_MASK));
 								loadConfigItem.setIcon(new IcyIcon("folder_open", MENU_ICON_SIZE));
 								loadConfigItem.addActionListener(new ActionListener() {
 
@@ -390,7 +417,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 									}
 								});
 								JMenuItem saveConfigItem = new JMenuItem("Save Configuration");
-								saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+								saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.SHIFT_DOWN_MASK
+										| SHORTCUTKEY_MASK));
 								saveConfigItem.setIcon(new IcyIcon("save", MENU_ICON_SIZE));
 								saveConfigItem.addActionListener(new ActionListener() {
 
@@ -409,7 +437,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 									public void actionPerformed(ActionEvent e) {
 										new ToolTipFrame("<html><h3>About Advanced Config</h3><p>Advanced Configuration is a tool "
 												+ "in which you fill some data <br/>about your configuration that some "
-												+ "plugins may need to access to.<br/> Exemple: the real values of the magnification" + "of your objectives.</p></html>",
+												+ "plugins may need to access to.<br/> Exemple: the real values of the magnification"
+												+ "of your objectives.</p></html>",
 												"MM4IcyAdvancedConfig");
 										if (advancedDlg == null)
 											advancedDlg = new AdvancedConfigurationDialog();
@@ -447,17 +476,21 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 										JPanel panel_container = new JPanel();
 										panel_container.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 										JPanel center = new JPanel(new BorderLayout());
-										final JLabel value = new JLabel("<html><body>" + "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
-												+ "<br/>Copyright 2011, Institut Pasteur</p><br/>"
-												+ "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
-												+ "<i>This software is distributed free of charge in the hope that it will be<br/>"
-												+ "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
-												+ "warranty of merchantability or fitness for a particular purpose. In no<br/>"
-												+ "event shall the copyright owner or contributors be liable for any direct,<br/>"
-												+ "indirect, incidental spacial, examplary, or consequential damages.<br/>"
-												+ "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>" + "2010. All rights reserved.</i>" + "</p>"
-												+ "</body></html>");
-										JLabel link = new JLabel("<html><a href=\"\">For more information, please follow this link.</a></html>");
+										final JLabel value = new JLabel(
+												"<html><body>"
+														+ "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
+														+ "<br/>Copyright 2011, Institut Pasteur</p><br/>"
+														+ "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
+														+ "<i>This software is distributed free of charge in the hope that it will be<br/>"
+														+ "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
+														+ "warranty of merchantability or fitness for a particular purpose. In no<br/>"
+														+ "event shall the copyright owner or contributors be liable for any direct,<br/>"
+														+ "indirect, incidental spacial, examplary, or consequential damages.<br/>"
+														+ "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>"
+														+ "2010. All rights reserved.</i>" + "</p>"
+														+ "</body></html>");
+										JLabel link = new JLabel(
+												"<html><a href=\"\">For more information, please follow this link.</a></html>");
 										link.addMouseListener(new MouseAdapter() {
 											@Override
 											public void mousePressed(MouseEvent mouseevent) {
@@ -615,7 +648,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 						_panel_cameraSettings.add(new JLabel("Display absolute histogram ?"));
 						_panel_cameraSettings.add(_cbAbsoluteHisto);
 
-						_comboBitDepth = new JComboBox(new String[] { "8-bit", "9-bit", "10-bit", "11-bit", "12-bit", "13-bit", "14-bit", "15-bit", "16-bit" });
+						_comboBitDepth = new JComboBox(new String[] { "8-bit", "9-bit", "10-bit", "11-bit", "12-bit", "13-bit", "14-bit",
+								"15-bit", "16-bit" });
 						_comboBitDepth.addActionListener(action_listener);
 						_comboBitDepth.addActionListener(new ActionListener() {
 							@Override
@@ -674,12 +708,14 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 										// New color value
 										int alpha = painterPreferences.getColor(painterName).getAlpha();
 										Color coloNew = (Color) tableModel.getValueAt(row, 1);
-										painterPreferences.setColor(painterName, new Color(coloNew.getRed(), coloNew.getGreen(), coloNew.getBlue(), alpha));
+										painterPreferences.setColor(painterName,
+												new Color(coloNew.getRed(), coloNew.getGreen(), coloNew.getBlue(), alpha));
 									} else if (columnName.contains("Transparency")) {
 										// New alpha value
 										Color c = painterPreferences.getColor(painterName);
 										int alphaValue = ((JSlider) tableModel.getValueAt(row, 2)).getValue();
-										painterPreferences.setColor(painterName, new Color(c.getRed(), c.getGreen(), c.getBlue(), alphaValue));
+										painterPreferences.setColor(painterName, new Color(c.getRed(), c.getGreen(), c.getBlue(),
+												alphaValue));
 									}
 									/*
 									 * for (int i = 0; i <
@@ -923,9 +959,11 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 
 					@Override
 					public void run() {
-						JOptionPane.showMessageDialog(Icy.getMainInterface().getMainFrame().getRootPane(),
-								"Error while initializing the microscope: please check if all devices are correctly turned on and recognized by the computer and"
-										+ "quit any program using those devices.");
+						JOptionPane
+								.showMessageDialog(
+										Icy.getMainInterface().getMainFrame().getRootPane(),
+										"Error while initializing the microscope: please check if all devices are correctly turned on and recognized by the computer and"
+												+ "quit any program using those devices.");
 					}
 				});
 			}
@@ -980,15 +1018,20 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 		JPanel panel_main = new JPanel();
 		panel_main.setLayout(new BorderLayout());
 
-		JLabel lbl_html = new JLabel("<html>" + "<h2>Unable to load library</h2>" + "<br/><b>What happened ?</b>"
-				+ "<p>The library is a file used by µManager to interact with the devices. Each device needs a specific file in order <br/>"
-				+ "to work properly with the system. If only one file is missing, this error occurs.</p>"
-				+ "<b>To avoid getting this problem again, please acknowledge the following steps: </b>"
-				+ "<ol><li>Do you have Micro-Manager 1.4 installed ? If not, please install it via the button below.</li>"
-				+ "<li>Check the application directory of Icy. You should find a file named:  " + "<ul><li>on Windows: MMCoreJ_wrap</li><li>on Mac: libMMCoreJ_wrap</li></ul>"
-				+ "<li>Plus : you should have a file for each of your devices starting with the name:" + "<ul><li>on Windows: mmgr_dal_</li><li>on Mac: libmmgr_dal_</li></ul>"
-				+ "<li>If you don't have these files, please copy (not move) them from the µManager application directory<br/>"
-				+ "to your Icy application directory.</li></ol></html>");
+		JLabel lbl_html = new JLabel(
+				"<html>"
+						+ "<h2>Unable to load library</h2>"
+						+ "<br/><b>What happened ?</b>"
+						+ "<p>The library is a file used by µManager to interact with the devices. Each device needs a specific file in order <br/>"
+						+ "to work properly with the system. If only one file is missing, this error occurs.</p>"
+						+ "<b>To avoid getting this problem again, please acknowledge the following steps: </b>"
+						+ "<ol><li>Do you have Micro-Manager 1.4 installed ? If not, please install it via the button below.</li>"
+						+ "<li>Check the application directory of Icy. You should find a file named:  "
+						+ "<ul><li>on Windows: MMCoreJ_wrap</li><li>on Mac: libMMCoreJ_wrap</li></ul>"
+						+ "<li>Plus : you should have a file for each of your devices starting with the name:"
+						+ "<ul><li>on Windows: mmgr_dal_</li><li>on Mac: libmmgr_dal_</li></ul>"
+						+ "<li>If you don't have these files, please copy (not move) them from the µManager application directory<br/>"
+						+ "to your Icy application directory.</li></ol></html>");
 		panel_main.add(lbl_html, BorderLayout.CENTER);
 		panel_main.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
@@ -1022,7 +1065,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 		dialog.add(panel_main);
 		dialog.pack();
 
-		dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight() / 2);
+		dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize().getHeight() / 2
+				- dialog.getHeight() / 2);
 
 		return dialog;
 	}
@@ -1124,9 +1168,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 		if (painterPreferences != null)
 			painterPreferences.saveColors();
 		_pluginListEmpty = true;
-		if (editor != null)
-			editor.stop();
-		StageMover.stopCoordinatesThread();
+		// if (editor != null)
+		// editor.stop();
 		onClosed();
 		removeFromMainDesktopPane();
 		setVisible(false);
@@ -1137,6 +1180,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	@Override
 	public void onClosed() {
 		if (mCore != null) {
+			callback.delete();
 			String filterBlockGroup = mCore.getCurrentFilterBlockGroup();
 			if (filterBlockGroup != null)
 				_prefs.put(PREFS_FB_GROUP, filterBlockGroup);
@@ -1159,7 +1203,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-
 			}
 			if (mCore.isSequenceRunning())
 				try {
@@ -1177,6 +1220,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 				e.printStackTrace();
 			}
 			mCore = null;
+			MicroscopeCore.releaseCore();
 		}
 		dispose();
 		super.onClosed();
@@ -1657,7 +1701,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 		if (!_isConfigLoaded)
 			return;
 		editor.pauseThread();
-		StageMover.setPauseThread(true);
 		ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
 		for (MicroscopePlugin p : _list_plugin) {
 			try {
@@ -1672,7 +1715,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 			_list_plugin.remove(p);
 		}
 		editor.resumeThread();
-		StageMover.setPauseThread(true);
 	}
 
 	/**
@@ -1703,8 +1745,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 						@Override
 						public void run() {
 							if (advancedDlg.waitingForObjectiveChange) {
-								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
-										+ "</b></div>   as your Objective Turret configuration ?</html>")) {
+								if (ConfirmDialog.confirm("Confirmation",
+										"<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
+												+ "</b></div>   as your Objective Turret configuration ?</html>")) {
 									mCore.setCurrentObjectiveTurretGroup(item.group);
 									String res = mCore.getCurrentObjectiveTurretGroup();
 									if (res != null)
@@ -1712,8 +1755,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 								}
 								advancedDlg.waitingForObjectiveChange = false;
 							} else if (advancedDlg.waitingForBlockChange) {
-								if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
-										+ "</b></div>  as your Filter Block configuration ?</html>")) {
+								if (ConfirmDialog.confirm("Confirmation",
+										"<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
+												+ "</b></div>  as your Filter Block configuration ?</html>")) {
 									mCore.setCurrentFilterBlockGroup(item.group);
 									String res = mCore.getCurrentFilterBlockGroup();
 									if (res != null)
@@ -1974,7 +2018,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					MessageDialog.showDialog("<html>Please modify the preset of the objective turret's group.<br/>" + "<br/><i>Exemple: switch from 10x to 20x.</i></html>");
+					MessageDialog.showDialog("<html>Please modify the preset of the objective turret's group.<br/>"
+							+ "<br/><i>Exemple: switch from 10x to 20x.</i></html>");
 					if (waitingForBlockChange)
 						waitingForBlockChange = false;
 					waitingForObjectiveChange = true;
@@ -1995,7 +2040,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					MessageDialog.showDialog("<html>Please modify the preset of the filter block's group.<br/>" + "<br/><i>Exemple: switch from GFP to Texas Red.</i></html>");
+					MessageDialog.showDialog("<html>Please modify the preset of the filter block's group.<br/>"
+							+ "<br/><i>Exemple: switch from GFP to Texas Red.</i></html>");
 					if (waitingForObjectiveChange)
 						waitingForObjectiveChange = false;
 					waitingForBlockChange = true;
@@ -2295,7 +2341,8 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	}
 
 	@Override
-	public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException {
+	public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag, boolean flag1)
+			throws MMScriptException {
 		// TODO Auto-generated method stub
 
 	}
@@ -2699,5 +2746,48 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	public void enableRoiButtons(boolean flag) {
 		// TODO Auto-generated method stub
 
+	}
+	
+	public class EventCallBackManager extends MMEventCallback {
+
+		@Override
+		public void onPropertyChanged(String s, String s1, String s2) {
+			// handle property changed
+		}
+
+		@Override
+		public void onPixelSizeChanged(double d) {
+			// handle pixel size changed
+		}
+
+		@Override
+		public void onConfigGroupChanged(String s, String s1) {
+			// handle config group changed
+			System.out.println(s + " / " + s1);
+		}
+
+		@Override
+		public void onPropertiesChanged() {
+			// handle properties changed
+		}
+
+		@Override
+		public void onStagePositionChanged(String s, double z) {
+			StageMover.onStagePositionChanged(s, z);
+		}
+
+		@Override
+		public void onStagePositionChangedRelative(String s, double z) {
+			StageMover.onStagePositionChangedRelative(s, z);
+		}
+
+		public void onXYStagePositionChanged(String s, double d, double d1) {
+			StageMover.onXYStagePositionChanged(s, d, d1);
+		};
+
+		@Override
+		public void onXYStagePositionChangedRelative(String s, double d, double d1) {
+			StageMover.onXYStagePositionChangedRelative(s, d, d1);
+		}
 	}
 }
