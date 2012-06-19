@@ -38,7 +38,7 @@ public abstract class MicroscopePlugin extends PluginActionable {
 
 	@Override
 	public void run() {
-		if (!MMMainFrame.isInstancing() && !MMMainFrame.instanced())
+		if (!MMMainFrame.isInstancing() && !MMMainFrame.isInstanced())
 			return;
 
 		// This uses a thread in order to wait for MicroManagerForIcy to be
@@ -47,7 +47,7 @@ public abstract class MicroscopePlugin extends PluginActionable {
 			@Override
 			public void run() {
 				// waiting until instanced
-				while (!MMMainFrame.instanced()) {
+				while (!MMMainFrame.isInstanced()) {
 					if (!MMMainFrame.isInstancing())
 						return;
 					ThreadUtil.sleep(10);

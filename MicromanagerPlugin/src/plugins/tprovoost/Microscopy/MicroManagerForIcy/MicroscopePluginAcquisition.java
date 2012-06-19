@@ -16,7 +16,7 @@ public abstract class MicroscopePluginAcquisition extends MicroscopePlugin {
 	 * Notify GUI that the acquisition of this plugin started.
 	 */
 	public void notifyAcquisitionStarted(boolean displayChange) {
-		if (!MMMainFrame.instanced())
+		if (!MMMainFrame.isInstanced())
 			return;
 		if (MMMainFrame.isInstancing())
 			return;
@@ -29,7 +29,7 @@ public abstract class MicroscopePluginAcquisition extends MicroscopePlugin {
 	 * Notify GUI that the acquisition of this plugin stopped.
 	 */
 	public void notifyAcquisitionOver() {
-		if (!MMMainFrame.instanced())
+		if (!MMMainFrame.isInstanced())
 			return;
 		if (MMMainFrame.isInstancing())
 			return;
@@ -45,7 +45,7 @@ public abstract class MicroscopePluginAcquisition extends MicroscopePlugin {
 	 *            : Percentage of the progress <b>done</b>.
 	 */
 	public void notifyProgress(int progress) {
-		if (!MMMainFrame.instanced())
+		if (!MMMainFrame.isInstanced())
 			return;
 		if (MMMainFrame.isInstancing())
 			return;

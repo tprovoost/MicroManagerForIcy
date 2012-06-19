@@ -39,7 +39,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Point2D;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -86,9 +88,12 @@ import org.micromanager.CalibrationListDlg;
 import org.micromanager.ConfigGroupPad;
 import org.micromanager.PositionListDlg;
 import org.micromanager.PropertyEditor;
+import org.micromanager.acquisition.AcquisitionManager;
+import org.micromanager.acquisition.AcquisitionWrapperEngine;
 import org.micromanager.acquisition.MMAcquisition;
 import org.micromanager.api.AcquisitionEngine;
 import org.micromanager.api.Autofocus;
+import org.micromanager.api.IAcquisitionEngine2010;
 import org.micromanager.api.ImageCache;
 import org.micromanager.api.MMListenerInterface;
 import org.micromanager.api.ScriptInterface;
@@ -242,6 +247,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	/** Progress Bar of the configuration file loading. */
 	private JProgressBar _progressBar;
 	private EventCallBackManager callback;
+	private AcquisitionManager acqMgr;
+	private AcquisitionEngine engine_;
 
 	/**
 	 * Singleton pattern : private constructor Use getInstance() instead.
@@ -300,10 +307,12 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 							close();
 							return;
 						}
+
 						ReportingUtils.setCore(mCore);
 						_afMgr = new AutofocusManager(MMMainFrame.this);
+						acqMgr = new AcquisitionManager();
 						PositionList posList = new PositionList();
-
+						
 						_camera_label = MMCoreJ.getG_Keyword_CameraName();
 						if (_camera_label == null)
 							_camera_label = "";
@@ -318,6 +327,11 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 						callback = new EventCallBackManager();
 						mCore.registerCallback(callback);
 
+						engine_ = new AcquisitionWrapperEngine();
+						engine_.setParentGUI(MMMainFrame.this);
+						engine_.setCore(mCore, getAutofocusManager());
+						engine_.setPositionList(getPositionList());
+						
 						setSystemMenuCallback(new MenuCallback() {
 
 							@Override
@@ -861,6 +875,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 							}
 						});
 					} else {
+						_isConfigLoaded = false;
 						instancing = false;
 						instanced = false;
 					}
@@ -1180,7 +1195,6 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-
 			}
 			if (mCore.isSequenceRunning())
 				try {
@@ -1198,6 +1212,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 				e.printStackTrace();
 			}
 			mCore = null;
+			MicroscopeCore.releaseCore();
 		}
 		dispose();
 		super.onClosed();
@@ -1232,8 +1247,14 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	 * To avoid
 	 * 
 	 * @return Actual state of MMMainFrame
+	 * @deprecated please use {@link #isInstanced()}
 	 */
+	@Deprecated
 	public static boolean instanced() {
+		return instanced;
+	}
+	
+	public static boolean isInstanced() {
 		return instanced;
 	}
 
@@ -1680,7 +1701,6 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	 * @param item
 	 *            : item which is going to change.
 	 */
-	@Override
 	public void notifyConfigAboutToChange(PropertyItem item) {
 		if (!instanced)
 			return;
@@ -1712,7 +1732,6 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	 * @param item
 	 *            : item changed.
 	 */
-	@Override
 	public void notifyConfigChanged(final PropertyItem item) {
 		if (!instanced)
 			return;
@@ -2164,45 +2183,131 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	}
 
 	@Override
-	public void openAcquisition(String s, String s1, int i, int j, int k) throws MMScriptException {
-		// TODO Auto-generated method stub
-
+	public void openAcquisition(String name, String rootDir, int nrFrames,
+			int nrChannels, int nrSlices, int nrPositions) throws MMScriptException {
+		this.openAcquisition(name, rootDir, nrFrames, nrChannels, nrSlices,
+				nrPositions, true, false);
 	}
 
 	@Override
-	public void openAcquisition(String s, String s1, int i, int j, int k, int l) throws MMScriptException {
-		// TODO Auto-generated method stub
-
+	public void openAcquisition(String name, String rootDir, int nrFrames,
+			int nrChannels, int nrSlices) throws MMScriptException {
+		openAcquisition(name, rootDir, nrFrames, nrChannels, nrSlices, 0);
 	}
 
 	@Override
-	public void openAcquisition(String s, String s1, int i, int j, int k, int l, boolean flag) throws MMScriptException {
-		// TODO Auto-generated method stub
-
+	public void openAcquisition(String name, String rootDir, int nrFrames,
+			int nrChannels, int nrSlices, int nrPositions, boolean show)
+			throws MMScriptException {
+		this.openAcquisition(name, rootDir, nrFrames, nrChannels, nrSlices, nrPositions, show, false);
 	}
 
 	@Override
-	public void openAcquisition(String s, String s1, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException {
-		// TODO Auto-generated method stub
-
+	public void openAcquisition(String name, String rootDir, int nrFrames,
+			int nrChannels, int nrSlices, boolean show)
+			throws MMScriptException {
+		this.openAcquisition(name, rootDir, nrFrames, nrChannels, nrSlices, 0, show, false);
 	}
 
 	@Override
-	public void openAcquisition(String s, String s1, int i, int j, int k, boolean flag) throws MMScriptException {
-		// TODO Auto-generated method stub
-
+	public void openAcquisition(String name, String rootDir, int nrFrames,
+			int nrChannels, int nrSlices, int nrPositions, boolean show, boolean virtual)
+			throws MMScriptException {
+		acqMgr.openAcquisition(name, rootDir, show, virtual);
+		MMAcquisition acq = acqMgr.getAcquisition(name);
+		acq.setDimensions(nrFrames, nrChannels, nrSlices, nrPositions);
 	}
 
 	@Override
-	public void openAcquisition(String s, String s1, int i, int j, int k, boolean flag, boolean flag1) throws MMScriptException {
-		// TODO Auto-generated method stub
+	public void openAcquisition(String name, String rootDir, int nrFrames,
+			int nrChannels, int nrSlices, boolean show, boolean virtual)
+			throws MMScriptException {
+		this.openAcquisition(name, rootDir, nrFrames, nrChannels, nrSlices, 0, show, virtual);
+	}
 
+	public String createAcquisition(JSONObject summaryMetadata, boolean diskCached) {
+		return acqMgr.createAcquisition(summaryMetadata, diskCached, getAcquisitionEngine());
+	}
+
+	public void openAcquisitionSnap(String name, String rootDir, boolean show)
+			throws MMScriptException {
+		/*
+		 * MMAcquisition acq = acqMgr.openAcquisitionSnap(name, rootDir, this,
+		 * show);
+		 * acq.setDimensions(0, 1, 1, 1);
+		 * try {
+		 * // acq.getAcqData().setPixelSizeUm(core_.getPixelSizeUm());
+		 * acq.setProperty(SummaryKeys.IMAGE_PIXEL_SIZE_UM,
+		 * String.valueOf(core_.getPixelSizeUm()));
+		 * } catch (Exception e) {
+		 * ReportingUtils.showError(e);
+		 * }
+		 */
 	}
 
 	@Override
-	public String createAcquisition(JSONObject jsonobject, boolean flag) {
-		// TODO Auto-generated method stub
-		return null;
+	public void initializeSimpleAcquisition(String name, int width, int height,
+			int byteDepth, int bitDepth, int multiCamNumCh) throws MMScriptException {
+		MMAcquisition acq = acqMgr.getAcquisition(name);
+		acq.setImagePhysicalDimensions(width, height, byteDepth, bitDepth, multiCamNumCh);
+		acq.initializeSimpleAcq();
+	}
+
+	@Override
+	public void initializeAcquisition(String name, int width, int height,
+			int depth) throws MMScriptException {
+		initializeAcquisition(name, width, height, depth, 8 * depth);
+	}
+
+	@Override
+	public void initializeAcquisition(String name, int width, int height,
+			int byteDepth, int bitDepth) throws MMScriptException {
+		MMAcquisition acq = acqMgr.getAcquisition(name);
+		// number of multi-cam cameras is set to 1 here for backwards
+		// compatibility
+		// might want to change this later
+		acq.setImagePhysicalDimensions(width, height, byteDepth, bitDepth, 1);
+		acq.initialize();
+	}
+
+	@Override
+	public int getAcquisitionImageWidth(String acqName) throws MMScriptException {
+		MMAcquisition acq = acqMgr.getAcquisition(acqName);
+		return acq.getWidth();
+	}
+
+	@Override
+	public int getAcquisitionImageHeight(String acqName) throws MMScriptException {
+		MMAcquisition acq = acqMgr.getAcquisition(acqName);
+		return acq.getHeight();
+	}
+
+	@Override
+	public int getAcquisitionImageBitDepth(String acqName) throws MMScriptException {
+		MMAcquisition acq = acqMgr.getAcquisition(acqName);
+		return acq.getBitDepth();
+	}
+
+	@Override
+	public int getAcquisitionImageByteDepth(String acqName) throws MMScriptException {
+		MMAcquisition acq = acqMgr.getAcquisition(acqName);
+		return acq.getByteDepth();
+	}
+
+	@Override
+	public int getAcquisitionMultiCamNumChannels(String acqName) throws MMScriptException {
+		MMAcquisition acq = acqMgr.getAcquisition(acqName);
+		return acq.getMultiCameraNumChannels();
+	}
+
+	@Override
+	public Boolean acquisitionExists(String name) {
+		return acqMgr.acquisitionExists(name);
+	}
+
+	@Override
+	public void closeAcquisition(String name) throws MMScriptException {
+		acqMgr.closeAcquisition(name);
 	}
 
 	@Override
@@ -2219,36 +2324,6 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
 	@Override
 	public void addToAlbum(TaggedImage taggedimage) throws MMScriptException {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void initializeSimpleAcquisition(String s, int i, int j, int k, int l, int i1) throws MMScriptException {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void initializeAcquisition(String s, int i, int j, int k) throws MMScriptException {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void initializeAcquisition(String s, int i, int j, int k, int l) throws MMScriptException {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public Boolean acquisitionExists(String s) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void closeAcquisition(String s) throws MMScriptException {
 		// TODO Auto-generated method stub
 
 	}
@@ -2272,9 +2347,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	}
 
 	@Override
-	public MMAcquisition getAcquisition(String s) throws MMScriptException {
-		// TODO Auto-generated method stub
-		return null;
+	public MMAcquisition getAcquisition(String name) throws MMScriptException {
+		if (acqMgr == null)
+			acqMgr = new AcquisitionManager();
+		return acqMgr.getAcquisition(name);
 	}
 
 	@Override
@@ -2329,36 +2405,6 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException {
 		// TODO Auto-generated method stub
 
-	}
-
-	@Override
-	public int getAcquisitionImageWidth(String s) throws MMScriptException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int getAcquisitionImageHeight(String s) throws MMScriptException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int getAcquisitionImageBitDepth(String s) throws MMScriptException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int getAcquisitionImageByteDepth(String s) throws MMScriptException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int getAcquisitionMultiCamNumChannels(String s) throws MMScriptException {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 	@Override
@@ -2470,9 +2516,13 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	}
 
 	@Override
-	public java.awt.geom.Point2D.Double getXYStagePosition() throws MMScriptException {
-		// TODO Auto-generated method stub
-		return null;
+	public Point2D.Double getXYStagePosition() throws MMScriptException {
+		try {
+			double[] posXYZ = StageMover.getXYZ();
+			return new Point2D.Double(posXYZ[0],posXYZ[1]);
+		} catch (Exception e) {
+			throw new MMScriptException(e.getMessage());
+		}
 	}
 
 	@Override
@@ -2549,8 +2599,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
 	@Override
 	public CMMCore getMMCore() {
-		// TODO Auto-generated method stub
-		return null;
+		return mCore;
 	}
 
 	@Override
@@ -2567,8 +2616,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
 	@Override
 	public AcquisitionEngine getAcquisitionEngine() {
-		// TODO Auto-generated method stub
-		return null;
+		return engine_;
 	}
 
 	@Override
@@ -2747,5 +2795,41 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 		public void onXYStagePositionChangedRelative(String s, double d, double d1) {
 			StageMover.onXYStagePositionChangedRelative(s, d, d1);
 		}
+	}
+
+	@Override
+	public void setImageSavingFormat(@SuppressWarnings("rawtypes") Class imageSavingClass) throws MMScriptException {
+	}
+
+	@Override
+	public boolean getAutoreloadOption() {
+		return false;
+	}
+
+	@Override
+	public boolean isSeriousErrorReported() {
+		return false;
+	}
+
+	@Override
+	public IAcquisitionEngine2010 getPipeline() {
+		IAcquisitionEngine2010 pipeline = null;
+		try {
+			Class<?> acquisitionEngine2010Class = Class.forName("org.micromanager.AcquisitionEngine2010");
+			pipeline = (IAcquisitionEngine2010) acquisitionEngine2010Class.getConstructors()[0].newInstance(this);
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return pipeline;
 	}
 }
