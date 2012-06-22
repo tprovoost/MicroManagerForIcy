@@ -1,14 +1,13 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper;
 
-import org.micromanager.acquisition.DefaultTaggedImagePipeline;
+import org.micromanager.acquisition.AcquisitionWrapperEngine;
 import org.micromanager.acquisition.SequenceSettings;
-import org.micromanager.api.AAcquisitionWrapperEngine;
 import org.micromanager.api.AcquisitionDisplay;
 import org.micromanager.utils.ReportingUtils;
 
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.MicroscopeSequence;
 
-public class AcquisitionWrapperEngineIcy extends AAcquisitionWrapperEngine {
+public class AcquisitionWrapperEngineIcy extends AcquisitionWrapperEngine {
 
 	MicroscopeSequence sequence;
 	

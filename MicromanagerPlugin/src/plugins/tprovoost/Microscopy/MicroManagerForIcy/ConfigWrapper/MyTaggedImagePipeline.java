@@ -11,8 +11,9 @@ import mmcorej.TaggedImage;
 
 import org.json.JSONObject;
 import org.micromanager.acquisition.LiveAcq;
-import org.micromanager.acquisition.ProcessorStack;
+import org.micromanager.acquisition.MMImageCache;
 import org.micromanager.acquisition.SequenceSettings;
+import org.micromanager.acquisition.TaggedImageStorageRam;
 import org.micromanager.api.DataProcessor;
 import org.micromanager.api.IAcquisitionEngine2010;
 import org.micromanager.api.ImageCache;
@@ -57,7 +58,7 @@ public class MyTaggedImagePipeline {
 		// Create the default display
 		acqName_ = getClass().getName();
 		sequence = new MicroscopeSequence(summaryMetadata_);
-		imageCache_ = new IcyImageCache(null);
+		imageCache_ = new MMImageCache(new TaggedImageStorageRam(summaryMetadata_));
 		imageCache_.addImageCacheListener(sequence);
 
 		// Start pumping images into the ImageCache

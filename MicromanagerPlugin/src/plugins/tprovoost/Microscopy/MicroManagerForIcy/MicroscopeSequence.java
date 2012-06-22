@@ -1,24 +1,17 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
-import java.nio.channels.Channel;
-import java.util.ArrayList;
-import jxl.biff.NumFormatRecordsException;
-
+import icy.image.IcyBufferedImage;
+import icy.sequence.Sequence;
+import icy.type.DataType;
 import mmcorej.TaggedImage;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.micromanager.acquisition.SequenceSettings;
 import org.micromanager.api.AcquisitionDisplay;
 import org.micromanager.api.ImageCacheListener;
-import org.micromanager.utils.ChannelSpec;
 import org.micromanager.utils.MDUtils;
 import org.micromanager.utils.MMScriptException;
 import org.micromanager.utils.ReportingUtils;
-
-import icy.image.IcyBufferedImage;
-import icy.sequence.Sequence;
-import icy.type.DataType;
 
 public class MicroscopeSequence extends Sequence implements AcquisitionDisplay, ImageCacheListener {
 
@@ -52,12 +45,13 @@ public class MicroscopeSequence extends Sequence implements AcquisitionDisplay, 
 					addVolumetricImage();
 				for (int z = 0 ; z < numSlices; ++z) {
 					IcyBufferedImage img;
-					if (bitDepth == 1)
+					if (bitDepth == 8)
 						img = new IcyBufferedImage(width, height, numChannels, DataType.UBYTE);
-					else if (bitDepth == 2)
+					else if (bitDepth == 16)
 						img = new IcyBufferedImage(width, height, numChannels, DataType.USHORT);
 					else
-						throw new MMScriptException("Unknown bit depth");				
+						throw new MMScriptException("Unknown bit depth");
+					addImage(img);
 				}
 			}
 		} catch (JSONException e) {
@@ -110,8 +104,8 @@ public class MicroscopeSequence extends Sequence implements AcquisitionDisplay, 
 			int slice = MDUtils.getSliceIndex(tags);
 			int position = MDUtils.getPositionIndex(tags);
 			IcyBufferedImage img = getImage(frame, slice);
-			img.setDataXY(ch, taggedImage);
-			dataChanged();
+			img.setDataXY(ch, taggedImage.pix);
+			setImage(frame, slice, img);
 		} catch (Exception e) {
 			ReportingUtils.logError(e);
 		}
