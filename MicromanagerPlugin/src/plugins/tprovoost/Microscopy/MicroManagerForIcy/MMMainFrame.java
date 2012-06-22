@@ -89,7 +89,6 @@ import org.micromanager.ConfigGroupPad;
 import org.micromanager.PositionListDlg;
 import org.micromanager.PropertyEditor;
 import org.micromanager.acquisition.AcquisitionManager;
-import org.micromanager.acquisition.AcquisitionWrapperEngine;
 import org.micromanager.acquisition.MMAcquisition;
 import org.micromanager.api.AcquisitionEngine;
 import org.micromanager.api.Autofocus;
@@ -108,6 +107,7 @@ import org.micromanager.utils.PropertyItem;
 import org.micromanager.utils.ReportingUtils;
 import org.micromanager.utils.StateItem;
 
+import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.AcquisitionWrapperEngineIcy;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigButtonsPanel;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.StageMover;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.ColorEditor;
@@ -327,7 +327,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 						callback = new EventCallBackManager();
 						mCore.registerCallback(callback);
 
-						engine_ = new AcquisitionWrapperEngine();
+						engine_ = new AcquisitionWrapperEngineIcy();
 						engine_.setParentGUI(MMMainFrame.this);
 						engine_.setCore(mCore, getAutofocusManager());
 						engine_.setPositionList(getPositionList());
