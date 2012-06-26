@@ -104,7 +104,6 @@ import org.micromanager.utils.StateItem;
 
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigButtonsPanel;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.ConfigGroupPad;
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.FakeScriptInterfacer;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper.PropertyEditor;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.StageMover;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.ColorEditor;
@@ -171,7 +170,6 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	AcceptListener acceptListener;
 	JTable painterTable;
 	AdvancedConfigurationDialog advancedDlg;
-	
 
 	// ------------
 	// PREFERENCES
@@ -244,7 +242,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	private IcyFrame _progressFrame;
 	/** Progress Bar of the configuration file loading. */
 	private JProgressBar _progressBar;
-	
+
 	private EventCallBackManager callback;
 
 	/**
@@ -316,10 +314,10 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 							e1.printStackTrace();
 						}
 						posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
-						
+
 						callback = new EventCallBackManager();
 						mCore.registerCallback(callback);
-						
+
 						posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 
 						setSystemMenuCallback(new MenuCallback() {
@@ -390,7 +388,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 									public void actionPerformed(ActionEvent e) {
 										CalibrationListDlg dlg = new CalibrationListDlg(mCore);
 										dlg.setDefaultCloseOperation(2);
-										dlg.setParentGUI(new FakeScriptInterfacer(MMMainFrame.this));
+										dlg.setParentGUI(MMMainFrame.this);
 										dlg.setVisible(true);
 										dlg.addWindowListener(new WindowAdapter() {
 											@Override
@@ -768,7 +766,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 						editor.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 						editor.addToMainDesktopPane();
 						editor.refresh();
-//						editor.start();
+						// editor.start();
 
 						add(_mainPanel);
 						initializeGUI();
@@ -1454,7 +1452,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	@Override
 	public void showXYPositionList() {
 		if (posListDlg_ == null) {
-			posListDlg_ = new PositionListDlg(mCore, new FakeScriptInterfacer(MMMainFrame.this), _posList, null);
+			posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
 			posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 		}
 		posListDlg_.setVisible(true);
@@ -2747,7 +2745,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 		// TODO Auto-generated method stub
 
 	}
-	
+
 	public class EventCallBackManager extends MMEventCallback {
 
 		@Override
