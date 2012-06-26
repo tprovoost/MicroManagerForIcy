@@ -768,7 +768,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 						editor.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 						editor.addToMainDesktopPane();
 						editor.refresh();
-						editor.start();
+//						editor.start();
 
 						add(_mainPanel);
 						initializeGUI();
