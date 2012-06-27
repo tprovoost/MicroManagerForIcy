@@ -2,18 +2,10 @@ package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
 import icy.image.IcyBufferedImage;
 import icy.sequence.Sequence;
-import icy.type.DataType;
-import mmcorej.TaggedImage;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.micromanager.api.AcquisitionDisplay;
-import org.micromanager.api.ImageCacheListener;
-import org.micromanager.utils.MDUtils;
-import org.micromanager.utils.MMScriptException;
-import org.micromanager.utils.ReportingUtils;
 
-public class MicroscopeSequence extends Sequence implements AcquisitionDisplay, ImageCacheListener {
+public class MicroscopeSequence extends Sequence implements AcquisitionDisplay {
 
 	// PainterCoordinates coordinates = new PainterCoordinates();
 	// PainterReticle reticle = new PainterReticle();
@@ -25,41 +17,6 @@ public class MicroscopeSequence extends Sequence implements AcquisitionDisplay, 
 			setPixelSizeX(core.getPixelSizeUm() * 0.001);
 			setPixelSizeY(getPixelSizeX());
 		}
-	}
-
-	public MicroscopeSequence(JSONObject summaryMetadata) {
-		if (core.getPixelSizeUm() > 0) {
-			setPixelSizeX(core.getPixelSizeUm() * 0.001);
-			setPixelSizeY(getPixelSizeX());
-		}
-		try {
-			int width = MDUtils.getWidth(summaryMetadata);
-			int height = MDUtils.getHeight(summaryMetadata);
-			int numChannels = MDUtils.getNumChannels(summaryMetadata);
-			int numSlices = MDUtils.getNumSlices(summaryMetadata);
-			int numFrames = MDUtils.getNumFrames(summaryMetadata);
-			int ijtype = MDUtils.getNumberOfComponents(summaryMetadata);
-			int bitDepth = MDUtils.getBitDepth(summaryMetadata);
-			for (int t = 0; t < numFrames; ++t) {
-				if (t != 0)
-					addVolumetricImage();
-				for (int z = 0 ; z < numSlices; ++z) {
-					IcyBufferedImage img;
-					if (bitDepth == 8)
-						img = new IcyBufferedImage(width, height, numChannels, DataType.UBYTE);
-					else if (bitDepth == 16)
-						img = new IcyBufferedImage(width, height, numChannels, DataType.USHORT);
-					else
-						throw new MMScriptException("Unknown bit depth");
-					addImage(img);
-				}
-			}
-		} catch (JSONException e) {
-			e.printStackTrace();
-		} catch (MMScriptException e) {
-			e.printStackTrace();
-		}
-
 	}
 
 	public MicroscopeSequence(IcyBufferedImage buffer) {
@@ -80,36 +37,6 @@ public class MicroscopeSequence extends Sequence implements AcquisitionDisplay, 
 		}
 	}
 
-	@Override
-	public void imageReceived(TaggedImage taggedImage) {
-		addImage(taggedImage);
-	}
-
-	@Override
-	public void imagingFinished(String path) {
-
-	}
-
-	private void addImage(TaggedImage taggedImage) {
-		try {
-			JSONObject tags = null;
-			if (taggedImage != null) {
-				tags = taggedImage.tags;
-			}
-			if (tags == null) {
-				return;
-			}
-			int frame = MDUtils.getFrameIndex(tags);
-			int ch = MDUtils.getChannelIndex(tags);
-			int slice = MDUtils.getSliceIndex(tags);
-			int position = MDUtils.getPositionIndex(tags);
-			IcyBufferedImage img = getImage(frame, slice);
-			img.setDataXY(ch, taggedImage.pix);
-			setImage(frame, slice, img);
-		} catch (Exception e) {
-			ReportingUtils.logError(e);
-		}
-	}
 
 	// private void setPainters() {
 	// addPainter(coordinates);

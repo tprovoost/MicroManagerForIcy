@@ -1701,7 +1701,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	 * @param item
 	 *            : item which is going to change.
 	 */
-	public void notifyConfigAboutToChange(PropertyItem item) {
+	public void notifyConfigAboutToChange(StateItem item) {
 		if (!instanced)
 			return;
 		if (!_isConfigLoaded)
@@ -1732,7 +1732,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	 * @param item
 	 *            : item changed.
 	 */
-	public void notifyConfigChanged(final PropertyItem item) {
+	public void notifyConfigChanged(final StateItem item) {
 		if (!instanced)
 			return;
 		if (!_isConfigLoaded)
@@ -2812,7 +2812,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	}
 
 	@Override
-	public IAcquisitionEngine2010 getPipeline() {
+	public IAcquisitionEngine2010 getAcquisitionEngine2010() {
 		IAcquisitionEngine2010 pipeline = null;
 		try {
 			Class<?> acquisitionEngine2010Class = Class.forName("org.micromanager.AcquisitionEngine2010");

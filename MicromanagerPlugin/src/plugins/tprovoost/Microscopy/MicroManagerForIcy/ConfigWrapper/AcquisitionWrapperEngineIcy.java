@@ -5,34 +5,31 @@ import org.micromanager.acquisition.SequenceSettings;
 import org.micromanager.api.AcquisitionDisplay;
 import org.micromanager.utils.ReportingUtils;
 
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.MicroscopeSequence;
-
 public class AcquisitionWrapperEngineIcy extends AcquisitionWrapperEngine {
 
-	MicroscopeSequence sequence;
-	
+	// private SequenceCacheListener listener;
+
 	@Override
-	public String runPipeline(SequenceSettings acquisitionSettings) {
+	public String runAcquisition(SequenceSettings acquisitionSettings) {
 		try {
-	         MyTaggedImagePipeline taggedImagePipeline = new MyTaggedImagePipeline(
-	                 getPipeline(),
-	                 acquisitionSettings,
-	                 taggedImageProcessors_,
-	                 gui_,
-	                 acquisitionSettings.save);
-	         summaryMetadata_ = taggedImagePipeline.summaryMetadata_;
-	         imageCache_ = taggedImagePipeline.imageCache_;
-	         sequence = taggedImagePipeline.sequence;
-	         return taggedImagePipeline.acqName_;
-	      } catch (Throwable ex) {
-	         ReportingUtils.showError(ex);
-	         return null;
-	      }
+			MyTaggedImagePipeline taggedImagePipeline = new MyTaggedImagePipeline(
+					getAcquisitionEngine2010(),
+					acquisitionSettings,
+					taggedImageProcessors_,
+					gui_,
+					acquisitionSettings.save);
+			summaryMetadata_ = taggedImagePipeline.summaryMetadata_;
+			imageCache_ = taggedImagePipeline.imageCache_;
+			// listener = taggedImagePipeline.listener;
+			return taggedImagePipeline.acqName_;
+		} catch (Throwable ex) {
+			ReportingUtils.showError(ex);
+			return null;
+		}
 	}
 
 	@Override
 	public AcquisitionDisplay getDisplay() {
-		return sequence;
+		return null;
 	}
-
 }

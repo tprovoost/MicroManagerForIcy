@@ -4,6 +4,9 @@
  */
 package plugins.tprovoost.Microscopy.MicroManagerForIcy.ConfigWrapper;
 
+import icy.main.Icy;
+import icy.sequence.Sequence;
+
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
@@ -20,8 +23,6 @@ import org.micromanager.api.ImageCache;
 import org.micromanager.api.ScriptInterface;
 import org.micromanager.utils.MMScriptException;
 
-import plugins.tprovoost.Microscopy.MicroManagerForIcy.MicroscopeSequence;
-
 /**
  * This is the default setup for the acquisition engine pipeline.
  * We create a default display,
@@ -34,7 +35,7 @@ public class MyTaggedImagePipeline {
 	final String acqName_;
 	final JSONObject summaryMetadata_;
 	final ImageCache imageCache_;
-	final MicroscopeSequence sequence;
+	final SequenceCacheListener listener;
 
 	/*
 	 * This class creates the default sequence of modules
@@ -57,9 +58,17 @@ public class MyTaggedImagePipeline {
 		
 		// Create the default display
 		acqName_ = getClass().getName();
-		sequence = new MicroscopeSequence(summaryMetadata_);
+		listener = new SequenceCacheListener(sequenceSettings, summaryMetadata_);
+		Object resultingData = listener.getResultingData();
+		if (resultingData instanceof Sequence) {
+			Icy.addSequence((Sequence)resultingData);
+		} else {
+			Sequence[] sequences = (Sequence[]) resultingData;
+			for (Sequence s : sequences)
+				Icy.addSequence(s);
+		}
 		imageCache_ = new MMImageCache(new TaggedImageStorageRam(summaryMetadata_));
-		imageCache_.addImageCacheListener(sequence);
+		imageCache_.addImageCacheListener(listener);
 
 		// Start pumping images into the ImageCache
 		LiveAcq liveAcq = new LiveAcq(taggedImageQueue, imageCache_);
