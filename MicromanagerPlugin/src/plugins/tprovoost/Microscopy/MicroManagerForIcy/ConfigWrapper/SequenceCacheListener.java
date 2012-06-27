@@ -12,6 +12,7 @@ import mmcorej.TaggedImage;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.micromanager.acquisition.SequenceSettings;
+import org.micromanager.api.AcquisitionDisplay;
 import org.micromanager.api.ImageCacheListener;
 import org.micromanager.utils.MDUtils;
 import org.micromanager.utils.MMScriptException;
@@ -20,9 +21,9 @@ import org.micromanager.utils.ReportingUtils;
 /**
  * @author thomasprovoost
  */
-public class SequenceCacheListener implements ImageCacheListener {
+public class SequenceCacheListener implements AcquisitionDisplay, ImageCacheListener {
 
-	public Object result;
+	private Object result = null;
 
 	public SequenceCacheListener(SequenceSettings settings, JSONObject summaryMetadata) {
 		try {
@@ -117,9 +118,6 @@ public class SequenceCacheListener implements ImageCacheListener {
 			int ch = MDUtils.getChannelIndex(tags);
 			int slice = MDUtils.getSliceIndex(tags);
 			int position = MDUtils.getPositionIndex(tags);
-
-			System.out.println(position + "/" + frame + "/" + slice + "/" + ch);
-
 			Sequence s;
 			if (result instanceof Sequence[]) {
 				s = ((Sequence[]) result)[position];

@@ -49,23 +49,25 @@ public class MyTaggedImagePipeline {
 			SequenceSettings sequenceSettings,
 			List<DataProcessor<TaggedImage>> imageProcessors,
 			ScriptInterface gui,
-			boolean diskCached) throws ClassNotFoundException, InstantiationException, IllegalAccessException, MMScriptException {
+			boolean diskCached, boolean display) throws ClassNotFoundException, InstantiationException, IllegalAccessException,
+			MMScriptException {
 
 		// Start up the acquisition engine
 		BlockingQueue<TaggedImage> taggedImageQueue = acqEngine.run(sequenceSettings);
 		summaryMetadata_ = acqEngine.getSummaryMetadata();
 
-		
 		// Create the default display
 		acqName_ = getClass().getName();
 		listener = new SequenceCacheListener(sequenceSettings, summaryMetadata_);
 		Object resultingData = listener.getResultingData();
-		if (resultingData instanceof Sequence) {
-			Icy.addSequence((Sequence)resultingData);
-		} else {
-			Sequence[] sequences = (Sequence[]) resultingData;
-			for (Sequence s : sequences)
-				Icy.addSequence(s);
+		if (display) {
+			if (resultingData instanceof Sequence) {
+				Icy.addSequence((Sequence) resultingData);
+			} else {
+				Sequence[] sequences = (Sequence[]) resultingData;
+				for (Sequence s : sequences)
+					Icy.addSequence(s);
+			}
 		}
 		imageCache_ = new MMImageCache(new TaggedImageStorageRam(summaryMetadata_));
 		imageCache_.addImageCacheListener(listener);

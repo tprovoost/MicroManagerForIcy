@@ -7,7 +7,16 @@ import org.micromanager.utils.ReportingUtils;
 
 public class AcquisitionWrapperEngineIcy extends AcquisitionWrapperEngine {
 
-	// private SequenceCacheListener listener;
+	private SequenceCacheListener listener;
+	private boolean display = true;
+
+	@Override
+	public void setDisplayMode(int mode) {
+		if (mode == 0)
+			display = false;
+		else
+			display = true;
+	}
 
 	@Override
 	public String runAcquisition(SequenceSettings acquisitionSettings) {
@@ -17,10 +26,10 @@ public class AcquisitionWrapperEngineIcy extends AcquisitionWrapperEngine {
 					acquisitionSettings,
 					taggedImageProcessors_,
 					gui_,
-					acquisitionSettings.save);
+					acquisitionSettings.save, display);
 			summaryMetadata_ = taggedImagePipeline.summaryMetadata_;
 			imageCache_ = taggedImagePipeline.imageCache_;
-			// listener = taggedImagePipeline.listener;
+			listener = taggedImagePipeline.listener;
 			return taggedImagePipeline.acqName_;
 		} catch (Throwable ex) {
 			ReportingUtils.showError(ex);
@@ -30,6 +39,6 @@ public class AcquisitionWrapperEngineIcy extends AcquisitionWrapperEngine {
 
 	@Override
 	public AcquisitionDisplay getDisplay() {
-		return null;
+		return listener;
 	}
 }
