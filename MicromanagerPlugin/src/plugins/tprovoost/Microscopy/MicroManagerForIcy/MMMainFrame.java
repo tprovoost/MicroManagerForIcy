@@ -1475,7 +1475,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
 		if (updateConfigPadStructure && _groupPad != null) {
 			if (_list_progress.size() == 0)
-				_groupPad.refreshStructure();
+				_groupPad.refreshStructure(false);
 		}
 		_panelAcquisitions.removeAll();
 		if (_list_progress.size() == 0) {
@@ -1967,7 +1967,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 			}
 			for (int j = 0; j < properties.size(); j++) {
 				PropertyItem item = new PropertyItem();
-				item.readFromCore(mCore, devices.get(i), properties.get(j));
+				item.readFromCore(mCore, devices.get(i), properties.get(j),false);
 				prefs.put(properties.get(j), item.value);
 			}
 		}
@@ -2747,7 +2747,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	}
 
 	@Override
-	public void openAcquisitionData(String s, boolean flag) {
+	public String openAcquisitionData(String s, boolean flag) {
+	    return s;
 	}
 
 	@Override
@@ -2831,5 +2832,14 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 			e.printStackTrace();
 		}
 		return pipeline;
+	}
+
+	@Override
+	public void refreshGUIFromCache() {
+	}
+
+	@Override
+	public String openAcquisitionData(String location, boolean inRAM, boolean show) throws MMScriptException {
+	    return null;
 	}
 }
