@@ -87,7 +87,7 @@ import org.micromanager.PositionListDlg;
 import org.micromanager.acquisition.MMAcquisition;
 import org.micromanager.api.AcquisitionEngine;
 import org.micromanager.api.Autofocus;
-import org.micromanager.api.DeviceControlGUI;
+import org.micromanager.api.IAcquisitionEngine2010;
 import org.micromanager.api.ImageCache;
 import org.micromanager.api.MMListenerInterface;
 import org.micromanager.api.ScriptInterface;
@@ -118,7 +118,7 @@ import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.MicroscopePainte
  * 
  * @author Thomas Provoost
  */
-public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInterface {
+public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
 	// ------------------
 	// CORE OF MMAINFRAME
@@ -1959,7 +1959,7 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 			}
 			for (int j = 0; j < properties.size(); j++) {
 				PropertyItem item = new PropertyItem();
-				item.readFromCore(mCore, devices.get(i), properties.get(j));
+				item.readFromCore(mCore, devices.get(i), properties.get(j), false);
 				prefs.put(properties.get(j), item.value);
 			}
 		}
@@ -2735,9 +2735,9 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 	}
 
 	@Override
-	public void openAcquisitionData(String s, boolean flag) {
+	public String openAcquisitionData(String s, boolean flag) {
 		// TODO Auto-generated method stub
-
+	    return null;
 	}
 
 	@Override
@@ -2788,4 +2788,46 @@ public class MMMainFrame extends IcyFrame implements DeviceControlGUI, ScriptInt
 			StageMover.onXYStagePositionChangedRelative(s, d, d1);
 		}
 	}
+
+    @Override
+    public IAcquisitionEngine2010 getAcquisitionEngine2010()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean getAutoreloadOption()
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isSeriousErrorReported()
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String openAcquisitionData(String arg0, boolean arg1, boolean arg2) throws MMScriptException
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void refreshGUIFromCache()
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setImageSavingFormat(Class arg0) throws MMScriptException
+    {
+        // TODO Auto-generated method stub
+        
+    }
 }

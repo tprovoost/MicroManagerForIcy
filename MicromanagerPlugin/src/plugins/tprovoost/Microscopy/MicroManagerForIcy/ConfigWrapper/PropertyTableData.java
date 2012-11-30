@@ -213,7 +213,7 @@ public class PropertyTableData extends AbstractTableModel implements MMPropertyT
 				StrVector properties = this.core_.getDevicePropertyNames(devices.get(i));
 				for (int j = 0; j < properties.size(); j++) {
 					PropertyItem item = new PropertyItem();
-					item.readFromCore(this.core_, devices.get(i), properties.get(j));
+					item.readFromCore(this.core_, devices.get(i), properties.get(j), false);
 
 					if (((!item.readOnly) || (this.showReadOnly_)) && (!item.preInit)) {
 						if (cfg.isPropertyIncluded(item.device, item.name)) {
