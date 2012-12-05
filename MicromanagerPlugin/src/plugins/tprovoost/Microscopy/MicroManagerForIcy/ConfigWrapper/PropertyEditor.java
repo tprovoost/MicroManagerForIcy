@@ -291,12 +291,6 @@ public class PropertyEditor extends IcyFrame
             }
         }
 
-        @Override
-        public void update(boolean fromCache)
-        {
-            super.update(fromCache);
-        }
-
         public void update()
         {
             update(flags_, groupName_, presetName_);
@@ -326,7 +320,7 @@ public class PropertyEditor extends IcyFrame
                         for (int j = 0; j < properties.size(); j++)
                         {
                             PropertyItem item = new PropertyItem();
-                            item.readFromCore(core_, devices.get(i), properties.get(j), false);
+                            item.readFromCore(core_, devices.get(i), properties.get(j));
 
                             if (((!item.readOnly) || (showReadOnly_)) && (!item.preInit))
                             {
