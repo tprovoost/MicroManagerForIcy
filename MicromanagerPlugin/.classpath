@@ -5,6 +5,7 @@
 	<classpathentry kind="lib" path="/Icy-App/ij/ij.jar" sourcepath="Icy-Kernel/D:/Stephane/Documents/dev/GIT/imagej"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mmstudio"/>
 	<classpathentry kind="lib" path="/Icy-App/icy.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/javascripter"/>
 	<classpathentry kind="output" path="bin"/>
 	<referencedentry kind="lib" path="/Icy-App/lib/MMJ_.jar" sourcepath="/mmstudio"/>
 </classpath>

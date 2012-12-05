@@ -2807,11 +2807,6 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     }
 
     @Override
-    public boolean isSeriousErrorReported() {
-	return false;
-    }
-
-    @Override
     public IAcquisitionEngine2010 getAcquisitionEngine2010() {
 	IAcquisitionEngine2010 pipeline = null;
 	try {
