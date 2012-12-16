@@ -1,9 +1,7 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
+import icy.image.IcyBufferedImage;
 import icy.sequence.Sequence;
-
-import java.awt.image.BufferedImage;
-
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.PainterCoordinates;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.PainterInfoConfig;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.PainterReticle;
@@ -21,14 +19,14 @@ public class MicroscopeSequence extends Sequence {
 		setPixelSizeY(getPixelSizeX());
 	}
 
-	public MicroscopeSequence(BufferedImage buffer) {
+	public MicroscopeSequence(IcyBufferedImage buffer) {
 		super(buffer);
 		setPainters();
 		setPixelSizeX(core.getPixelSizeUm()*0.001);
 		setPixelSizeY(getPixelSizeX());
 	}
 
-	public MicroscopeSequence(String string, BufferedImage buffer) {
+	public MicroscopeSequence(String string, IcyBufferedImage buffer) {
 		super(string, buffer);
 		setPainters();
 		setPixelSizeX(core.getPixelSizeUm()*0.001);
