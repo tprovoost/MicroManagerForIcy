@@ -347,7 +347,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 				    public void actionPerformed(ActionEvent e) {
 					if (!_pluginListEmpty
 						&& !ConfirmDialog
-							.confirm("Are you sure ?",
+							.confirm(
+								"Are you sure ?",
 								"<html>Loading the Configuration Wizard will unload all the devices and pause all running acquisitions.</br> Are you sure you want to continue ?</html>"))
 					    return;
 					notifyConfigAboutToChange(null);
@@ -375,7 +376,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
 				JMenuItem menuPxSizeConfigItem = new JMenuItem("Pixel Size Config");
 				menuPxSizeConfigItem.setIcon(new IcyIcon("link", MENU_ICON_SIZE));
-				menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+				menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.SHIFT_DOWN_MASK
+					| SHORTCUTKEY_MASK));
 				menuPxSizeConfigItem.addActionListener(new ActionListener() {
 
 				    @Override
@@ -396,7 +398,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 				});
 
 				JMenuItem loadConfigItem = new JMenuItem("Load Configuration");
-				loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+				loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.SHIFT_DOWN_MASK
+					| SHORTCUTKEY_MASK));
 				loadConfigItem.setIcon(new IcyIcon("folder_open", MENU_ICON_SIZE));
 				loadConfigItem.addActionListener(new ActionListener() {
 
@@ -408,7 +411,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 				    }
 				});
 				JMenuItem saveConfigItem = new JMenuItem("Save Configuration");
-				saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+				saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.SHIFT_DOWN_MASK
+					| SHORTCUTKEY_MASK));
 				saveConfigItem.setIcon(new IcyIcon("save", MENU_ICON_SIZE));
 				saveConfigItem.addActionListener(new ActionListener() {
 
@@ -465,18 +469,20 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 					JPanel panel_container = new JPanel();
 					panel_container.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 					JPanel center = new JPanel(new BorderLayout());
-					final JLabel value = new JLabel("<html><body>"
-						+ "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
-						+ "<br/>Copyright 2011, Institut Pasteur</p><br/>"
-						+ "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
-						+ "<i>This software is distributed free of charge in the hope that it will be<br/>"
-						+ "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
-						+ "warranty of merchantability or fitness for a particular purpose. In no<br/>"
-						+ "event shall the copyright owner or contributors be liable for any direct,<br/>"
-						+ "indirect, incidental spacial, examplary, or consequential damages.<br/>"
-						+ "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>" + "2010. All rights reserved.</i>"
-						+ "</p>" + "</body></html>");
-					JLabel link = new JLabel("<html><a href=\"\">For more information, please follow this link.</a></html>");
+					final JLabel value = new JLabel(
+						"<html><body>"
+							+ "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
+							+ "<br/>Copyright 2011, Institut Pasteur</p><br/>"
+							+ "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
+							+ "<i>This software is distributed free of charge in the hope that it will be<br/>"
+							+ "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
+							+ "warranty of merchantability or fitness for a particular purpose. In no<br/>"
+							+ "event shall the copyright owner or contributors be liable for any direct,<br/>"
+							+ "indirect, incidental spacial, examplary, or consequential damages.<br/>"
+							+ "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>"
+							+ "2010. All rights reserved.</i>" + "</p>" + "</body></html>");
+					JLabel link = new JLabel(
+						"<html><a href=\"\">For more information, please follow this link.</a></html>");
 					link.addMouseListener(new MouseAdapter() {
 					    @Override
 					    public void mousePressed(MouseEvent mouseevent) {
@@ -512,8 +518,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 					dialog.setResizable(false);
 					dialog.setVisible(true);
 					dialog.pack();
-					dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize()
-						.getHeight() / 2 - dialog.getHeight() / 2);
+					dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2,
+						(int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight() / 2);
 					dialog.setLocationRelativeTo(mainFrame);
 				    }
 				});
@@ -635,7 +641,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 			_panel_cameraSettings.add(new JLabel("Display absolute histogram ?"));
 			_panel_cameraSettings.add(_cbAbsoluteHisto);
 
-			_comboBitDepth = new JComboBox(new String[] { "8-bit", "9-bit", "10-bit", "11-bit", "12-bit", "13-bit", "14-bit", "15-bit", "16-bit" });
+			_comboBitDepth = new JComboBox(new String[] { "8-bit", "9-bit", "10-bit", "11-bit", "12-bit", "13-bit", "14-bit",
+				"15-bit", "16-bit" });
 			_comboBitDepth.addActionListener(action_listener);
 			_comboBitDepth.addActionListener(new ActionListener() {
 			    @Override
@@ -694,12 +701,14 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 					// New color value
 					int alpha = painterPreferences.getColor(painterName).getAlpha();
 					Color coloNew = (Color) tableModel.getValueAt(row, 1);
-					painterPreferences.setColor(painterName, new Color(coloNew.getRed(), coloNew.getGreen(), coloNew.getBlue(), alpha));
+					painterPreferences.setColor(painterName,
+						new Color(coloNew.getRed(), coloNew.getGreen(), coloNew.getBlue(), alpha));
 				    } else if (columnName.contains("Transparency")) {
 					// New alpha value
 					Color c = painterPreferences.getColor(painterName);
 					int alphaValue = ((JSlider) tableModel.getValueAt(row, 2)).getValue();
-					painterPreferences.setColor(painterName, new Color(c.getRed(), c.getGreen(), c.getBlue(), alphaValue));
+					painterPreferences.setColor(painterName, new Color(c.getRed(), c.getGreen(), c.getBlue(),
+						alphaValue));
 				    }
 				    /*
 				     * for (int i = 0; i <
@@ -1018,17 +1027,20 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	JPanel panel_main = new JPanel();
 	panel_main.setLayout(new BorderLayout());
 
-	JLabel lbl_html = new JLabel("<html>" + "<h2>Unable to load library</h2>" + "<br/><b>What happened ?</b>"
-		+ "<p>The library is a file used by µManager to interact with the devices. Each device needs a specific file in order <br/>"
-		+ "to work properly with the system. If only one file is missing, this error occurs.</p>"
-		+ "<b>To avoid getting this problem again, please acknowledge the following steps: </b>"
-		+ "<ol><li>Do you have Micro-Manager 1.4 installed ? If not, please install it via the button below.</li>"
-		+ "<li>Check the application directory of Icy. You should find a file named:  "
-		+ "<ul><li>on Windows: MMCoreJ_wrap</li><li>on Mac: libMMCoreJ_wrap</li></ul>"
-		+ "<li>Plus : you should have a file for each of your devices starting with the name:"
-		+ "<ul><li>on Windows: mmgr_dal_</li><li>on Mac: libmmgr_dal_</li></ul>"
-		+ "<li>If you don't have these files, please copy (not move) them from the µManager application directory<br/>"
-		+ "to your Icy application directory.</li></ol></html>");
+	JLabel lbl_html = new JLabel(
+		"<html>"
+			+ "<h2>Unable to load library</h2>"
+			+ "<br/><b>What happened ?</b>"
+			+ "<p>The library is a file used by µManager to interact with the devices. Each device needs a specific file in order <br/>"
+			+ "to work properly with the system. If only one file is missing, this error occurs.</p>"
+			+ "<b>To avoid getting this problem again, please acknowledge the following steps: </b>"
+			+ "<ol><li>Do you have Micro-Manager 1.4 installed ? If not, please install it via the button below.</li>"
+			+ "<li>Check the application directory of Icy. You should find a file named:  "
+			+ "<ul><li>on Windows: MMCoreJ_wrap</li><li>on Mac: libMMCoreJ_wrap</li></ul>"
+			+ "<li>Plus : you should have a file for each of your devices starting with the name:"
+			+ "<ul><li>on Windows: mmgr_dal_</li><li>on Mac: libmmgr_dal_</li></ul>"
+			+ "<li>If you don't have these files, please copy (not move) them from the µManager application directory<br/>"
+			+ "to your Icy application directory.</li></ol></html>");
 	panel_main.add(lbl_html, BorderLayout.CENTER);
 	panel_main.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
@@ -1062,7 +1074,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	dialog.add(panel_main);
 	dialog.pack();
 
-	dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight() / 2);
+	dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize().getHeight() / 2
+		- dialog.getHeight() / 2);
 
 	return dialog;
     }
@@ -1155,22 +1168,19 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	notifyConfigChanged(null);
     }
 
-    @Override
-    public void close() {
-	if (!_list_plugin.isEmpty()) {
-	    if (!ConfirmDialog.confirm("Some plugins are still running. Are you sure you want to close this ?"))
-		return;
+    public void customClose() {
+	if (getInternalFrame().getDefaultCloseOperation() == WindowConstants.DO_NOTHING_ON_CLOSE) {
+	    if (!_list_plugin.isEmpty()) {
+		if (!ConfirmDialog.confirm("Some plugins are still running. Are you sure you want to close this ?"))
+		    return;
+	    }
+	    if (painterPreferences != null)
+		painterPreferences.saveColors();
+	    _pluginListEmpty = true;
+	    setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+	    close();
+	    Icy.getMainInterface().removeCanExitListener(acceptListener);
 	}
-	if (painterPreferences != null)
-	    painterPreferences.saveColors();
-	_pluginListEmpty = true;
-	// if (editor != null)
-	// editor.stop();
-	onClosed();
-	removeFromMainDesktopPane();
-	setVisible(false);
-	Icy.getMainInterface().getMainFrame().repaint();
-	Icy.getMainInterface().removeCanExitListener(acceptListener);
     }
 
     @Override
@@ -1756,8 +1766,9 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 			    if (item instanceof StateItem) {
 				StateItem sitem = (StateItem) item;
 				if (advancedDlg.waitingForObjectiveChange) {
-				    if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>"
-					    + sitem.group + "</b></div>   as your Objective Turret configuration ?</html>")) {
+				    if (ConfirmDialog.confirm("Confirmation",
+					    "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + sitem.group
+						    + "</b></div>   as your Objective Turret configuration ?</html>")) {
 					mCore.setCurrentObjectiveTurretGroup(sitem.group);
 					String res = mCore.getCurrentObjectiveTurretGroup();
 					if (res != null)
@@ -1765,8 +1776,9 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 				    }
 				    advancedDlg.waitingForObjectiveChange = false;
 				} else if (advancedDlg.waitingForBlockChange) {
-				    if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>"
-					    + sitem.group + "</b></div>  as your Filter Block configuration ?</html>")) {
+				    if (ConfirmDialog.confirm("Confirmation",
+					    "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + sitem.group
+						    + "</b></div>  as your Filter Block configuration ?</html>")) {
 					mCore.setCurrentFilterBlockGroup(sitem.group);
 					String res = mCore.getCurrentFilterBlockGroup();
 					if (res != null)
@@ -2189,7 +2201,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     }
 
     @Override
-    public void openAcquisition(String name, String rootDir, int nrFrames, int nrChannels, int nrSlices, int nrPositions) throws MMScriptException {
+    public void openAcquisition(String name, String rootDir, int nrFrames, int nrChannels, int nrSlices, int nrPositions)
+	    throws MMScriptException {
 	this.openAcquisition(name, rootDir, nrFrames, nrChannels, nrSlices, nrPositions, true, false);
     }
 
@@ -2205,13 +2218,14 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     }
 
     @Override
-    public void openAcquisition(String name, String rootDir, int nrFrames, int nrChannels, int nrSlices, boolean show) throws MMScriptException {
+    public void openAcquisition(String name, String rootDir, int nrFrames, int nrChannels, int nrSlices, boolean show)
+	    throws MMScriptException {
 	this.openAcquisition(name, rootDir, nrFrames, nrChannels, nrSlices, 0, show, false);
     }
 
     @Override
-    public void openAcquisition(String name, String rootDir, int nrFrames, int nrChannels, int nrSlices, int nrPositions, boolean show, boolean virtual)
-	    throws MMScriptException {
+    public void openAcquisition(String name, String rootDir, int nrFrames, int nrChannels, int nrSlices, int nrPositions, boolean show,
+	    boolean virtual) throws MMScriptException {
 	acqMgr.openAcquisition(name, rootDir, show, virtual);
 	MMAcquisition acq = acqMgr.getAcquisition(name);
 	acq.setDimensions(nrFrames, nrChannels, nrSlices, nrPositions);
@@ -2239,7 +2253,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     }
 
     @Override
-    public void initializeSimpleAcquisition(String name, int width, int height, int byteDepth, int bitDepth, int multiCamNumCh) throws MMScriptException {
+    public void initializeSimpleAcquisition(String name, int width, int height, int byteDepth, int bitDepth, int multiCamNumCh)
+	    throws MMScriptException {
 	MMAcquisition acq = acqMgr.getAcquisition(name);
 	acq.setImagePhysicalDimensions(width, height, byteDepth, bitDepth, multiCamNumCh);
 	acq.initializeSimpleAcq();
@@ -2392,7 +2407,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     }
 
     @Override
-    public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException {
+    public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag, boolean flag1)
+	    throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
@@ -2702,13 +2718,13 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     public org.micromanager.PositionListDlg getXYPosListDlg() {
 	return null;
     }
-    
+
     public AcqControlDlg getAcqDlgPatched() {
 	if (dlg == null)
 	    dlg = new AcqControlDlg(getAcquisitionEngine(), null, this);
 	return dlg;
     }
-    
+
     public PositionListDlg getXYPosListDlgPatched() {
 	return posListDlg_;
     }
@@ -2835,5 +2851,16 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     @Override
     public String openAcquisitionData(String location, boolean inRAM, boolean show) throws MMScriptException {
 	return null;
+    }
+
+    @Override
+    public void setChannelExposureTime(String channelGroup, String channel, double exposure) {
+	_txtExposure.setText("" + exposure);
+	setExposure();
+    }
+
+    @Override
+    public double getChannelExposureTime(String channelGroup, String channel, double defaultExp) {
+	return Double.valueOf(_txtExposure.getText()).doubleValue();
     }
 }
