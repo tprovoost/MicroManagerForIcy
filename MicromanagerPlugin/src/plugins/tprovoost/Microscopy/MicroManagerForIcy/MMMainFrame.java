@@ -119,8 +119,7 @@ import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.MicroscopePainte
  * 
  * @author Thomas Provoost
  */
-public class MMMainFrame extends IcyFrame implements ScriptInterface
-{
+public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
     // ------------------
     // CORE OF MMAINFRAME
@@ -252,8 +251,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Singleton pattern : private constructor Use getInstance() instead.
      */
-    private MMMainFrame()
-    {
+    private MMMainFrame() {
 	super(NODE_NAME, false, true, false, true);
 
 	// --------------
@@ -280,40 +278,30 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	_progressFrame.add(_progressBar);
 	_progressFrame.addToMainDesktopPane();
 	loadConfig();
-	if (_sysConfigFile == "")
-	{
+	if (_sysConfigFile == "") {
 	    return;
 	}
 	instancing = true;
-	ThreadUtil.bgRun(new Runnable()
-	{
+	ThreadUtil.bgRun(new Runnable() {
 
 	    @Override
-	    public void run()
-	    {
-		while (!_isConfigLoaded)
-		{
-		    try
-		    {
+	    public void run() {
+		while (!_isConfigLoaded) {
+		    try {
 			Thread.sleep(10);
-		    }
-		    catch (InterruptedException e)
-		    {
+		    } catch (InterruptedException e) {
 		    }
 		}
-		ThreadUtil.invokeLater(new Runnable()
-		{
+		ThreadUtil.invokeLater(new Runnable() {
 
 		    @Override
-		    public void run()
-		    {
+		    public void run() {
 			// --------------------
 			// START INITIALIZATION
 			// --------------------
 			if (_progressBar != null)
 			    getContentPane().remove(_progressBar);
-			if (mCore == null)
-			{
+			if (mCore == null) {
 			    close();
 			    return;
 			}
@@ -323,12 +311,9 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			_camera_label = MMCoreJ.getG_Keyword_CameraName();
 			if (_camera_label == null)
 			    _camera_label = "";
-			try
-			{
+			try {
 			    setPositionList(posList);
-			}
-			catch (MMScriptException e1)
-			{
+			} catch (MMScriptException e1) {
 			    e1.printStackTrace();
 			}
 			posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
@@ -338,12 +323,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 
 			posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 
-			setSystemMenuCallback(new MenuCallback()
-			{
+			setSystemMenuCallback(new MenuCallback() {
 
 			    @Override
-			    public JMenu getMenu()
-			    {
+			    public JMenu getMenu() {
 				JMenu toReturn = MMMainFrame.this.getDefaultSystemMenu();
 				JMenuItem hconfig = new JMenuItem("Configuration Wizard");
 				hconfig.setIcon(new IcyIcon("cog", MENU_ICON_SIZE));
@@ -359,32 +342,27 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 				// }
 				// });
 
-				hconfig.addActionListener(new ActionListener()
-				{
+				hconfig.addActionListener(new ActionListener() {
 
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					if (!_pluginListEmpty
 						&& !ConfirmDialog
-							.confirm("Are you sure ?",
+							.confirm(
+								"Are you sure ?",
 								"<html>Loading the Configuration Wizard will unload all the devices and pause all running acquisitions.</br> Are you sure you want to continue ?</html>"))
 					    return;
 					notifyConfigAboutToChange(null);
-					try
-					{
+					try {
 					    mCore.unloadAllDevices();
-					}
-					catch (Exception e1)
-					{
+					} catch (Exception e1) {
 					    e1.printStackTrace();
 					}
 					String previous_config = _sysConfigFile;
 					ConfiguratorDlg configurator = new ConfiguratorDlg(mCore, _sysConfigFile);
 					configurator.setVisible(true);
 					String res = configurator.getFileName();
-					if (_sysConfigFile == "" || _sysConfigFile == res || res == "")
-					{
+					if (_sysConfigFile == "" || _sysConfigFile == res || res == "") {
 					    _sysConfigFile = previous_config;
 					    loadConfig();
 					}
@@ -395,22 +373,19 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 
 				JMenuItem menuPxSizeConfigItem = new JMenuItem("Pixel Size Config");
 				menuPxSizeConfigItem.setIcon(new IcyIcon("link", MENU_ICON_SIZE));
-				menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
-				menuPxSizeConfigItem.addActionListener(new ActionListener()
-				{
+				menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.SHIFT_DOWN_MASK
+					| SHORTCUTKEY_MASK));
+				menuPxSizeConfigItem.addActionListener(new ActionListener() {
 
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					CalibrationListDlg dlg = new CalibrationListDlg(mCore);
 					dlg.setDefaultCloseOperation(2);
 					dlg.setParentGUI(MMMainFrame.this);
 					dlg.setVisible(true);
-					dlg.addWindowListener(new WindowAdapter()
-					{
+					dlg.addWindowListener(new WindowAdapter() {
 					    @Override
-					    public void windowClosed(WindowEvent e)
-					    {
+					    public void windowClosed(WindowEvent e) {
 						super.windowClosed(e);
 						notifyConfigChanged(null);
 					    }
@@ -420,41 +395,37 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 				});
 
 				JMenuItem loadConfigItem = new JMenuItem("Load Configuration");
-				loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+				loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.SHIFT_DOWN_MASK
+					| SHORTCUTKEY_MASK));
 				loadConfigItem.setIcon(new IcyIcon("folder_open", MENU_ICON_SIZE));
-				loadConfigItem.addActionListener(new ActionListener()
-				{
+				loadConfigItem.addActionListener(new ActionListener() {
 
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					loadConfig();
 					initializeGUI();
 					refreshGUI();
 				    }
 				});
 				JMenuItem saveConfigItem = new JMenuItem("Save Configuration");
-				saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+				saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.SHIFT_DOWN_MASK
+					| SHORTCUTKEY_MASK));
 				saveConfigItem.setIcon(new IcyIcon("save", MENU_ICON_SIZE));
-				saveConfigItem.addActionListener(new ActionListener()
-				{
+				saveConfigItem.addActionListener(new ActionListener() {
 
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					saveConfig();
 				    }
 				});
 				JMenuItem advancedConfigItem = new JMenuItem("Advanced Configuration");
 				advancedConfigItem.setIcon(new IcyIcon("wrench_plus", MENU_ICON_SIZE));
-				advancedConfigItem.addActionListener(new ActionListener()
-				{
+				advancedConfigItem.addActionListener(new ActionListener() {
 
 				    /**
 									 */
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					new ToolTipFrame("<html><h3>About Advanced Config</h3><p>Advanced Configuration is a tool "
 						+ "in which you fill some data <br/>about your configuration that some "
 						+ "plugins may need to access to.<br/> Exemple: the real values of the magnification"
@@ -467,12 +438,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 				});
 				JMenuItem loadPresetConfigItem = new JMenuItem("Load Configuration Presets");
 				loadPresetConfigItem.setIcon(new IcyIcon("doc_import", MENU_ICON_SIZE));
-				loadPresetConfigItem.addActionListener(new ActionListener()
-				{
+				loadPresetConfigItem.addActionListener(new ActionListener() {
 
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					notifyConfigAboutToChange(null);
 					loadPresets();
 					notifyConfigChanged(null);
@@ -480,44 +449,40 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 				});
 				JMenuItem savePresetConfigItem = new JMenuItem("Save Configuration Presets");
 				savePresetConfigItem.setIcon(new IcyIcon("doc_export", MENU_ICON_SIZE));
-				savePresetConfigItem.addActionListener(new ActionListener()
-				{
+				savePresetConfigItem.addActionListener(new ActionListener() {
 
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					savePresets();
 				    }
 				});
 				JMenuItem aboutItem = new JMenuItem("About");
 				aboutItem.setIcon(new IcyIcon("info", MENU_ICON_SIZE));
-				aboutItem.addActionListener(new ActionListener()
-				{
+				aboutItem.addActionListener(new ActionListener() {
 
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					final JDialog dialog = new JDialog(mainFrame, "About");
 					JPanel panel_container = new JPanel();
 					panel_container.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 					JPanel center = new JPanel(new BorderLayout());
-					final JLabel value = new JLabel("<html><body>"
-						+ "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
-						+ "<br/>Copyright 2011, Institut Pasteur</p><br/>"
-						+ "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
-						+ "<i>This software is distributed free of charge in the hope that it will be<br/>"
-						+ "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
-						+ "warranty of merchantability or fitness for a particular purpose. In no<br/>"
-						+ "event shall the copyright owner or contributors be liable for any direct,<br/>"
-						+ "indirect, incidental spacial, examplary, or consequential damages.<br/>"
-						+ "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>" + "2010. All rights reserved.</i>"
-						+ "</p>" + "</body></html>");
-					JLabel link = new JLabel("<html><a href=\"\">For more information, please follow this link.</a></html>");
-					link.addMouseListener(new MouseAdapter()
-					{
+					final JLabel value = new JLabel(
+						"<html><body>"
+							+ "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
+							+ "<br/>Copyright 2011, Institut Pasteur</p><br/>"
+							+ "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
+							+ "<i>This software is distributed free of charge in the hope that it will be<br/>"
+							+ "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
+							+ "warranty of merchantability or fitness for a particular purpose. In no<br/>"
+							+ "event shall the copyright owner or contributors be liable for any direct,<br/>"
+							+ "indirect, incidental spacial, examplary, or consequential damages.<br/>"
+							+ "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>"
+							+ "2010. All rights reserved.</i>" + "</p>" + "</body></html>");
+					JLabel link = new JLabel(
+						"<html><a href=\"\">For more information, please follow this link.</a></html>");
+					link.addMouseListener(new MouseAdapter() {
 					    @Override
-					    public void mousePressed(MouseEvent mouseevent)
-					    {
+					    public void mousePressed(MouseEvent mouseevent) {
 						NetworkUtil.openURL("http://valelab.ucsf.edu/~MM/MMwiki/index.php/Micro-Manager");
 					    }
 					});
@@ -531,12 +496,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 					JPanel panel_south = new JPanel();
 					panel_south.setLayout(new BoxLayout(panel_south, BoxLayout.X_AXIS));
 					JButton btn = new JButton("OK");
-					btn.addActionListener(new ActionListener()
-					{
+					btn.addActionListener(new ActionListener() {
 
 					    @Override
-					    public void actionPerformed(ActionEvent actionevent)
-					    {
+					    public void actionPerformed(ActionEvent actionevent) {
 						dialog.dispose();
 					    }
 					});
@@ -552,20 +515,18 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 					dialog.setResizable(false);
 					dialog.setVisible(true);
 					dialog.pack();
-					dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize()
-						.getHeight() / 2 - dialog.getHeight() / 2);
+					dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2,
+						(int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight() / 2);
 					dialog.setLocationRelativeTo(mainFrame);
 				    }
 				});
 				JMenuItem propertyBrowserItem = new JMenuItem("Property Browser");
 				propertyBrowserItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA, SHORTCUTKEY_MASK));
 				propertyBrowserItem.setIcon(new IcyIcon("db", MENU_ICON_SIZE));
-				propertyBrowserItem.addActionListener(new ActionListener()
-				{
+				propertyBrowserItem.addActionListener(new ActionListener() {
 
 				    @Override
-				    public void actionPerformed(ActionEvent e)
-				    {
+				    public void actionPerformed(ActionEvent e) {
 					editor.setVisible(!editor.isVisible());
 				    }
 				});
@@ -611,21 +572,16 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			_panel_cameraSettings.setMinimumSize(new Dimension(100, 200));
 
 			_txtExposure = new JTextField();
-			try
-			{
+			try {
 			    mCore.setExposure(90.0D);
 			    _txtExposure.setText(String.valueOf(mCore.getExposure()));
-			}
-			catch (Exception e2)
-			{
+			} catch (Exception e2) {
 			    _txtExposure.setText("90");
 			}
 			_txtExposure.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-			_txtExposure.addKeyListener(new KeyAdapter()
-			{
+			_txtExposure.addKeyListener(new KeyAdapter() {
 			    @Override
-			    public void keyPressed(KeyEvent keyevent)
-			    {
+			    public void keyPressed(KeyEvent keyevent) {
 				if (keyevent.getKeyCode() == KeyEvent.VK_ENTER)
 				    setExposure();
 			    }
@@ -636,10 +592,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			_combo_binning = new JComboBox();
 			_combo_binning.setMaximumRowCount(4);
 			_combo_binning.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-			_combo_binning.addActionListener(new ActionListener()
-			{
-			    public void actionPerformed(ActionEvent e)
-			    {
+			_combo_binning.addActionListener(new ActionListener() {
+			    public void actionPerformed(ActionEvent e) {
 				changeBinning();
 			    }
 			});
@@ -648,20 +602,14 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			_panel_cameraSettings.add(_combo_binning);
 
 			_combo_shutters = new JComboBox();
-			_combo_shutters.addActionListener(new ActionListener()
-			{
-			    public void actionPerformed(ActionEvent arg0)
-			    {
-				try
-				{
-				    if (_combo_shutters.getSelectedItem() != null)
-				    {
+			_combo_shutters.addActionListener(new ActionListener() {
+			    public void actionPerformed(ActionEvent arg0) {
+				try {
+				    if (_combo_shutters.getSelectedItem() != null) {
 					mCore.setShutterDevice((String) _combo_shutters.getSelectedItem());
 					_prefs.put(PREF_SHUTTER, (String) _combo_shutters.getItemAt(_combo_shutters.getSelectedIndex()));
 				    }
-				}
-				catch (Exception e)
-				{
+				} catch (Exception e) {
 				    e.printStackTrace();
 				}
 			    }
@@ -670,22 +618,18 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			_panel_cameraSettings.add(new JLabel("Shutter : "));
 			_panel_cameraSettings.add(_combo_shutters);
 
-			ActionListener action_listener = new ActionListener()
-			{
+			ActionListener action_listener = new ActionListener() {
 			    @Override
-			    public void actionPerformed(ActionEvent e)
-			    {
+			    public void actionPerformed(ActionEvent e) {
 				updateHistogram();
 			    }
 			};
 
 			_cbAbsoluteHisto = new JCheckBox();
 			_cbAbsoluteHisto.addActionListener(action_listener);
-			_cbAbsoluteHisto.addActionListener(new ActionListener()
-			{
+			_cbAbsoluteHisto.addActionListener(new ActionListener() {
 			    @Override
-			    public void actionPerformed(ActionEvent actionevent)
-			    {
+			    public void actionPerformed(ActionEvent actionevent) {
 				_comboBitDepth.setEnabled(_cbAbsoluteHisto.isSelected());
 				_prefs.putBoolean(PREF_ABS_HIST, _cbAbsoluteHisto.isSelected());
 			    }
@@ -693,14 +637,12 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			_panel_cameraSettings.add(new JLabel("Display absolute histogram ?"));
 			_panel_cameraSettings.add(_cbAbsoluteHisto);
 
-			_comboBitDepth = new JComboBox(new String[]
-			{ "8-bit", "9-bit", "10-bit", "11-bit", "12-bit", "13-bit", "14-bit", "15-bit", "16-bit" });
+			_comboBitDepth = new JComboBox(new String[] { "8-bit", "9-bit", "10-bit", "11-bit", "12-bit", "13-bit", "14-bit",
+				"15-bit", "16-bit" });
 			_comboBitDepth.addActionListener(action_listener);
-			_comboBitDepth.addActionListener(new ActionListener()
-			{
+			_comboBitDepth.addActionListener(new ActionListener() {
 			    @Override
-			    public void actionPerformed(ActionEvent actionevent)
-			    {
+			    public void actionPerformed(ActionEvent actionevent) {
 				_prefs.putInt(PREF_BITDEPTH, _comboBitDepth.getSelectedIndex());
 			    }
 			});
@@ -722,23 +664,19 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 
 			HashMap<String, Color> allColors = painterPreferences.getColors();
 			String[] allKeys = (String[]) allColors.keySet().toArray(new String[0]);
-			String[] columnNames =
-			{ "Painter", "Color", "Transparency" };
+			String[] columnNames = { "Painter", "Color", "Transparency" };
 			Object[][] data = new Object[allKeys.length][3];
 
-			for (int i = 0; i < allKeys.length; ++i)
-			{
+			for (int i = 0; i < allKeys.length; ++i) {
 			    final int actualRow = i;
 			    String actualKey = allKeys[i].toString();
 			    data[i][0] = actualKey;
 			    data[i][1] = allColors.get(actualKey);
 			    final JSlider slider = new JSlider(0, 255, allColors.get(actualKey).getAlpha());
-			    slider.addChangeListener(new ChangeListener()
-			    {
+			    slider.addChangeListener(new ChangeListener() {
 
 				@Override
-				public void stateChanged(ChangeEvent changeevent)
-				{
+				public void stateChanged(ChangeEvent changeevent) {
 				    painterTable.setValueAt(slider, actualRow, 2);
 				}
 			    });
@@ -746,31 +684,27 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			}
 			final AbstractTableModel tableModel = new JTableEvolvedModel(columnNames, data);
 			painterTable = new JTable(tableModel);
-			painterTable.getModel().addTableModelListener(new TableModelListener()
-			{
+			painterTable.getModel().addTableModelListener(new TableModelListener() {
 
 			    @Override
-			    public void tableChanged(TableModelEvent tablemodelevent)
-			    {
-				if (tablemodelevent.getType() == TableModelEvent.UPDATE)
-				{
+			    public void tableChanged(TableModelEvent tablemodelevent) {
+				if (tablemodelevent.getType() == TableModelEvent.UPDATE) {
 				    int row = tablemodelevent.getFirstRow();
 				    int col = tablemodelevent.getColumn();
 				    String columnName = tableModel.getColumnName(col);
 				    String painterName = (String) tableModel.getValueAt(row, 0);
-				    if (columnName.contains("Color"))
-				    {
+				    if (columnName.contains("Color")) {
 					// New color value
 					int alpha = painterPreferences.getColor(painterName).getAlpha();
 					Color coloNew = (Color) tableModel.getValueAt(row, 1);
-					painterPreferences.setColor(painterName, new Color(coloNew.getRed(), coloNew.getGreen(), coloNew.getBlue(), alpha));
-				    }
-				    else if (columnName.contains("Transparency"))
-				    {
+					painterPreferences.setColor(painterName,
+						new Color(coloNew.getRed(), coloNew.getGreen(), coloNew.getBlue(), alpha));
+				    } else if (columnName.contains("Transparency")) {
 					// New alpha value
 					Color c = painterPreferences.getColor(painterName);
 					int alphaValue = ((JSlider) tableModel.getValueAt(row, 2)).getValue();
-					painterPreferences.setColor(painterName, new Color(c.getRed(), c.getGreen(), c.getBlue(), alphaValue));
+					painterPreferences.setColor(painterName, new Color(c.getRed(), c.getGreen(), c.getBlue(),
+						alphaValue));
 				    }
 				    /*
 				     * for (int i = 0; i <
@@ -835,31 +769,36 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			instancing = false;
 			_singleton = MMMainFrame.this;
 			setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-			addFrameListener(new IcyFrameAdapter()
-			{
+			addFrameListener(new IcyFrameAdapter() {
 			    @Override
-			    public void icyFrameClosing(IcyFrameEvent e)
-			    {
-				close();
+			    public void icyFrameClosing(IcyFrameEvent e) {
+				if (getInternalFrame().getDefaultCloseOperation() == WindowConstants.DO_NOTHING_ON_CLOSE) {
+				    if (!_list_plugin.isEmpty()) {
+					if (!ConfirmDialog.confirm("Some plugins are still running. Are you sure you want to close this ?"))
+					    return;
+				    }
+				    if (painterPreferences != null)
+					painterPreferences.saveColors();
+				    _pluginListEmpty = true;
+				    setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+				    close();
+				    Icy.getMainInterface().removeCanExitListener(acceptListener);
+				}
 			    }
 			});
-			acceptListener = new AcceptListener()
-			{
+			acceptListener = new AcceptListener() {
 
 			    @Override
-			    public boolean accept(Object source)
-			    {
+			    public boolean accept(Object source) {
 				close();
 				return _pluginListEmpty;
 			    }
 			};
 
-			adapter = new MainAdapter()
-			{
+			adapter = new MainAdapter() {
 
 			    @Override
-			    public void sequenceOpened(MainEvent event)
-			    {
+			    public void sequenceOpened(MainEvent event) {
 				updateHistogram();
 			    }
 
@@ -876,23 +815,16 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Update the histogram with camera settings.
      */
-    private void updateHistogram()
-    {
+    private void updateHistogram() {
 	Sequence s = Icy.getMainInterface().getFocusedSequence();
-	if (s != null && s instanceof MicroscopeSequence && !s.getDataType_().isFloat())
-	{
-	    for (Viewer v : s.getViewers())
-	    {
-		for (LUTBand lutband : v.getLut().getLutBands())
-		{
-		    if (_cbAbsoluteHisto.isSelected())
-		    {
+	if (s != null && s instanceof MicroscopeSequence && !s.getDataType_().isFloat()) {
+	    for (Viewer v : s.getViewers()) {
+		for (LUTBand lutband : v.getLut().getLutBands()) {
+		    if (_cbAbsoluteHisto.isSelected()) {
 			s.setAutoUpdateChannelBounds(false);
 			double maxvalue = Math.pow(2, _comboBitDepth.getSelectedIndex() + 8);
 			lutband.getScaler().setAbsLeftRightIn(0, maxvalue);
-		    }
-		    else
-		    {
+		    } else {
 			s.setAutoUpdateChannelBounds(true);
 			lutband.getScaler().setAbsLeftRightIn(lutband.getMin(), lutband.getMax());
 		    }
@@ -905,47 +837,32 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * Loads configuration using a JFileChooser Shows a Dialog if a
      * configuration already exists.
      */
-    private void loadConfig()
-    {
+    private void loadConfig() {
 	_isConfigLoaded = false;
-	if (mCore != null)
-	{
-	    if (!ConfirmDialog.confirm("Are you sure ", "Do you want to load another configuration ?"))
-	    {
+	if (mCore != null) {
+	    if (!ConfirmDialog.confirm("Are you sure ", "Do you want to load another configuration ?")) {
 		return;
 	    }
-	    if (mCore.isSequenceRunning())
-	    {
-		try
-		{
+	    if (mCore.isSequenceRunning()) {
+		try {
 		    mCore.stopSequenceAcquisition();
-		}
-		catch (Exception e1)
-		{
+		} catch (Exception e1) {
 		    e1.printStackTrace();
 		}
 	    }
-	    if (!_list_plugin.isEmpty())
-	    {
-		for (MicroscopePlugin p : _list_plugin)
-		{
-		    try
-		    {
+	    if (!_list_plugin.isEmpty()) {
+		for (MicroscopePlugin p : _list_plugin) {
+		    try {
 			p.notifyConfigAboutToChange(null);
-		    }
-		    catch (Exception e)
-		    {
+		    } catch (Exception e) {
 			e.printStackTrace();
 		    }
 		}
 	    }
-	    try
-	    {
+	    try {
 		mCore.unloadAllDevices();
 		mCore.reset();
-	    }
-	    catch (Exception e)
-	    {
+	    } catch (Exception e) {
 		e.printStackTrace();
 	    }
 	}
@@ -957,30 +874,22 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	_progressFrame.center();
 	_progressFrame.setVisible(true);
 	_progressFrame.requestFocus();
-	ThreadUtil.bgRun(new Runnable()
-	{
+	ThreadUtil.bgRun(new Runnable() {
 
 	    @Override
-	    public void run()
-	    {
+	    public void run() {
 		loadCMMCore(_sysConfigFile);
 		_progressFrame.setVisible(false);
-		if (mCore == null)
-		{
-		    if (ConfirmDialog.confirm("Error while launching", "Do you want to load another configuration ?"))
-		    {
-			ThreadUtil.invokeLater(new Runnable()
-			{
+		if (mCore == null) {
+		    if (ConfirmDialog.confirm("Error while launching", "Do you want to load another configuration ?")) {
+			ThreadUtil.invokeLater(new Runnable() {
 			    @Override
-			    public void run()
-			    {
+			    public void run() {
 				loadConfig();
 			    }
 			});
 		    }
-		}
-		else
-		{
+		} else {
 		    _isConfigLoaded = true;
 		    _prefs = _root.node(new File(_sysConfigFile).getName());
 		    // System.out.println("Save file: " +
@@ -988,16 +897,11 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 		    if (_groupButtonsPanel != null)
 			initializeGUI();
 		    setVisible(true);
-		    if (!_list_plugin.isEmpty())
-		    {
-			for (MicroscopePlugin p : _list_plugin)
-			{
-			    try
-			    {
+		    if (!_list_plugin.isEmpty()) {
+			for (MicroscopePlugin p : _list_plugin) {
+			    try {
 				p.notifyConfigChanged(null);
-			    }
-			    catch (Exception e)
-			    {
+			    } catch (Exception e) {
 				e.printStackTrace();
 			    }
 			}
@@ -1011,16 +915,12 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * load configuration file for the core
      */
-    void loadCMMCore(String path)
-    {
+    void loadCMMCore(String path) {
 	mCore = MicroscopeCore.getCore();
-	if (mCore == null)
-	{
-	    ThreadUtil.invokeNow(new Runnable()
-	    {
+	if (mCore == null) {
+	    ThreadUtil.invokeNow(new Runnable() {
 		@Override
-		public void run()
-		{
+		public void run() {
 		    JDialog dialog = createDLLErrorDialog();
 		    dialog.setVisible(true);
 		}
@@ -1031,26 +931,20 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	 * core.enableDebugLog(false); core.enableStderrLog(false);
 	 * core.shutdownLogging();
 	 */
-	try
-	{
+	try {
 	    mCore.loadSystemConfiguration(path);
-	    try
-	    {
+	    try {
 		StrVector pxSizeConfigs = mCore.getAvailablePixelSizeConfigs();
 		if (!(pxSizeConfigs.size() >= 1))
 		    throw new Exception();
-	    }
-	    catch (Exception e)
-	    {
+	    } catch (Exception e) {
 		mCore.definePixelSizeConfig("ResDefault");
 		mCore.setPixelSizeUm("ResDefault", 1.0);
 	    }
-	    ThreadUtil.invokeLater(new Runnable()
-	    {
+	    ThreadUtil.invokeLater(new Runnable() {
 
 		@Override
-		public void run()
-		{
+		public void run() {
 		    {
 			if (_groupPad != null)
 			    _groupPad.setCore(mCore);
@@ -1059,32 +953,23 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 		    }
 		}
 	    });
-	}
-	catch (Exception e)
-	{
+	} catch (Exception e) {
 
 	    String res = e.getMessage();
-	    if (res.contains("file not acessible or corrupted") || res.contains("Unable to load library"))
-	    {
-		ThreadUtil.invokeNow(new Runnable()
-		{
+	    if (res.contains("file not acessible or corrupted") || res.contains("Unable to load library")) {
+		ThreadUtil.invokeNow(new Runnable() {
 
 		    @Override
-		    public void run()
-		    {
+		    public void run() {
 			JDialog dialog = createDLLErrorDialog();
 			dialog.setVisible(true);
 		    }
 		});
-	    }
-	    else
-	    {
-		ThreadUtil.invokeNow(new Runnable()
-		{
+	    } else {
+		ThreadUtil.invokeNow(new Runnable() {
 
 		    @Override
-		    public void run()
-		    {
+		    public void run() {
 			JOptionPane.showMessageDialog(Icy.getMainInterface().getMainFrame().getRootPane(),
 				"Error while initializing the microscope: please check if all devices are correctly turned on and recognized by the computer and"
 					+ "quit any program using those devices.");
@@ -1098,13 +983,11 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Load all saved preferences.
      */
-    private void loadPreferences()
-    {
+    private void loadPreferences() {
 	_txtExposure.setText(_prefs.get(PREF_EXPOSURE, "90"));
 	setExposure();
 	String shutter = _prefs.get(PREF_SHUTTER, "");
-	if (shutter != "")
-	{
+	if (shutter != "") {
 	    for (int i = 0; i < _combo_shutters.getItemCount(); ++i)
 		if (((String) _combo_shutters.getItemAt(i)) == shutter)
 		    _combo_shutters.setSelectedIndex(i);
@@ -1114,19 +997,14 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	_comboBitDepth.setSelectedIndex(_prefs.getInt(PREF_BITDEPTH, 0));
 	mCore.setCurrentFilterBlockGroup(_prefs.get(PREFS_FB_GROUP, null));
 	String currentObjective = _prefs.get(PREFS_OT_GROUP, null);
-	if (currentObjective != null)
-	{
+	if (currentObjective != null) {
 	    HashMap<String, Double> hashMag = new HashMap<String, Double>();
 	    XMLPreferences nodeObjective = _prefs.node(currentObjective);
-	    for (String key : nodeObjective.keys())
-	    {
+	    for (String key : nodeObjective.keys()) {
 		String value = nodeObjective.get(key, null);
-		try
-		{
+		try {
 		    hashMag.put(key, Double.parseDouble(value));
-		}
-		catch (NumberFormatException e)
-		{
+		} catch (NumberFormatException e) {
 		    e.printStackTrace();
 		}
 	    }
@@ -1140,8 +1018,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * 
      * @return Returns the dialog.
      */
-    private JDialog createDLLErrorDialog()
-    {
+    private JDialog createDLLErrorDialog() {
 	MainFrame mainFrame = Icy.getMainInterface().getMainFrame();
 	// Dialog frame to be returned
 	final JDialog dialog = new JDialog(mainFrame, "Loading Error", true);
@@ -1150,17 +1027,20 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	JPanel panel_main = new JPanel();
 	panel_main.setLayout(new BorderLayout());
 
-	JLabel lbl_html = new JLabel("<html>" + "<h2>Unable to load library</h2>" + "<br/><b>What happened ?</b>"
-		+ "<p>The library is a file used by µManager to interact with the devices. Each device needs a specific file in order <br/>"
-		+ "to work properly with the system. If only one file is missing, this error occurs.</p>"
-		+ "<b>To avoid getting this problem again, please acknowledge the following steps: </b>"
-		+ "<ol><li>Do you have Micro-Manager 1.4 installed ? If not, please install it via the button below.</li>"
-		+ "<li>Check the application directory of Icy. You should find a file named:  "
-		+ "<ul><li>on Windows: MMCoreJ_wrap</li><li>on Mac: libMMCoreJ_wrap</li></ul>"
-		+ "<li>Plus : you should have a file for each of your devices starting with the name:"
-		+ "<ul><li>on Windows: mmgr_dal_</li><li>on Mac: libmmgr_dal_</li></ul>"
-		+ "<li>If you don't have these files, please copy (not move) them from the µManager application directory<br/>"
-		+ "to your Icy application directory.</li></ol></html>");
+	JLabel lbl_html = new JLabel(
+		"<html>"
+			+ "<h2>Unable to load library</h2>"
+			+ "<br/><b>What happened ?</b>"
+			+ "<p>The library is a file used by µManager to interact with the devices. Each device needs a specific file in order <br/>"
+			+ "to work properly with the system. If only one file is missing, this error occurs.</p>"
+			+ "<b>To avoid getting this problem again, please acknowledge the following steps: </b>"
+			+ "<ol><li>Do you have Micro-Manager 1.4 installed ? If not, please install it via the button below.</li>"
+			+ "<li>Check the application directory of Icy. You should find a file named:  "
+			+ "<ul><li>on Windows: MMCoreJ_wrap</li><li>on Mac: libMMCoreJ_wrap</li></ul>"
+			+ "<li>Plus : you should have a file for each of your devices starting with the name:"
+			+ "<ul><li>on Windows: mmgr_dal_</li><li>on Mac: libmmgr_dal_</li></ul>"
+			+ "<li>If you don't have these files, please copy (not move) them from the µManager application directory<br/>"
+			+ "to your Icy application directory.</li></ol></html>");
 	panel_main.add(lbl_html, BorderLayout.CENTER);
 	panel_main.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
@@ -1171,24 +1051,20 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	JButton btn_link = new JButton();
 	btn_link.setText("Download Micro-Manager 1.4.6");
 	btn_link.setBackground(Color.WHITE);
-	btn_link.addActionListener(new ActionListener()
-	{
+	btn_link.addActionListener(new ActionListener() {
 
 	    @Override
-	    public void actionPerformed(ActionEvent e)
-	    {
+	    public void actionPerformed(ActionEvent e) {
 		NetworkUtil.openURL("http://valelab.ucsf.edu/~MM/MMwiki/index.php/Micro-Manager_Version_Archive");
 	    }
 	});
 	panel_buttons.add(btn_link);
 
 	JButton btn_ok = new JButton("OK");
-	btn_ok.addActionListener(new ActionListener()
-	{
+	btn_ok.addActionListener(new ActionListener() {
 
 	    @Override
-	    public void actionPerformed(ActionEvent e)
-	    {
+	    public void actionPerformed(ActionEvent e) {
 		dialog.setVisible(false);
 	    }
 	});
@@ -1198,7 +1074,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	dialog.add(panel_main);
 	dialog.pack();
 
-	dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight() / 2);
+	dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth() / 2, (int) mainFrame.getSize().getHeight() / 2
+		- dialog.getHeight() / 2);
 
 	return dialog;
     }
@@ -1206,27 +1083,22 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Save the configuration presets. From Micro-Manager.
      */
-    protected void saveConfig()
-    {
+    protected void saveConfig() {
 	MicroscopeModel model = new MicroscopeModel();
-	try
-	{
+	try {
 	    model.loadFromFile(_sysConfigFile);
 	    model.createSetupConfigsFromHardware(mCore);
 	    model.createResolutionsFromHardware(mCore);
 	    JFileChooser fc = new JFileChooser();
 	    boolean saveFile = true;
 	    File f;
-	    do
-	    {
+	    do {
 		fc.setSelectedFile(new File(model.getFileName()));
 		int retVal = fc.showSaveDialog(null);
-		if (retVal == 0)
-		{
+		if (retVal == 0) {
 		    f = fc.getSelectedFile();
 
-		    if (f.exists())
-		    {
+		    if (f.exists()) {
 			int sel = JOptionPane.showConfirmDialog(null, "Overwrite " + f.getName(), "File Save", 0);
 
 			if (sel == 0)
@@ -1234,21 +1106,16 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 			else
 			    saveFile = false;
 		    }
-		}
-		else
-		{
+		} else {
 		    return;
 		}
-	    }
-	    while (!saveFile);
+	    } while (!saveFile);
 
 	    model.saveToFile(f.getAbsolutePath());
 	    _sysConfigFile = f.getAbsolutePath();
 	    _configChanged_ = false;
 	    setConfigSaveButtonStatus(_configChanged_);
-	}
-	catch (MMConfigFileException e)
-	{
+	} catch (MMConfigFileException e) {
 	    ReportingUtils.showError(e);
 	}
     }
@@ -1256,29 +1123,23 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Modify the binning from camera config combo box.
      */
-    private void changeBinning()
-    {
-	try
-	{
+    private void changeBinning() {
+	try {
 	    notifyConfigAboutToChange(null);
 	    boolean bWasRunning;
 	    if (bWasRunning = mCore.isSequenceRunning())
 		mCore.stopSequenceAcquisition();
 
-	    if (_camera_label.length() > 0)
-	    {
+	    if (_camera_label.length() > 0) {
 		Object item = _combo_binning.getSelectedItem();
-		if (item != null)
-		{
+		if (item != null) {
 		    mCore.setProperty(_camera_label, MMCoreJ.getG_Keyword_Binning(), item.toString());
 		}
 	    }
 	    notifyConfigChanged(null);
 	    if (bWasRunning)
 		mCore.startContinuousSequenceAcquisition(0.0D);
-	}
-	catch (Exception e)
-	{
+	} catch (Exception e) {
 	    ReportingUtils.showError(e);
 	}
     }
@@ -1286,113 +1147,67 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Set the exposure from the camera config text field value.
      */
-    private void setExposure()
-    {
+    private void setExposure() {
 
 	notifyConfigAboutToChange(null);
 	Double test = Double.valueOf(_txtExposure.getText());
-	if (test == null)
-	{
-	    try
-	    {
+	if (test == null) {
+	    try {
 		mCore.setExposure(10);
+	    } catch (Exception e) {
 	    }
-	    catch (Exception e)
-	    {
-	    }
-	}
-	else
-	{
-	    try
-	    {
+	} else {
+	    try {
 		mCore.setExposure(test.doubleValue());
 		double exposure = mCore.getExposure();
 		_txtExposure.setText("" + exposure);
 		_prefs.put(PREF_EXPOSURE, "" + exposure);
-	    }
-	    catch (Exception exp)
-	    {
+	    } catch (Exception exp) {
 	    }
 	}
 	notifyConfigChanged(null);
     }
 
     @Override
-    public void close()
-    {
-	if (!_list_plugin.isEmpty())
-	{
-	    if (!ConfirmDialog.confirm("Some plugins are still running. Are you sure you want to close this ?"))
-		return;
-	}
-	if (painterPreferences != null)
-	    painterPreferences.saveColors();
-	_pluginListEmpty = true;
-	// if (editor != null)
-	// editor.stop();
-	onClosed();
-	removeFromMainDesktopPane();
-	setVisible(false);
-	Icy.getMainInterface().getMainFrame().repaint();
-	Icy.getMainInterface().removeCanExitListener(acceptListener);
-    }
-
-    @Override
-    public void onClosed()
-    {
-	if (mCore != null)
-	{
+    public void onClosed() {
+	if (mCore != null) {
 	    callback.delete();
 	    String filterBlockGroup = mCore.getCurrentFilterBlockGroup();
 	    if (filterBlockGroup != null)
 		_prefs.put(PREFS_FB_GROUP, filterBlockGroup);
 	    String objectiveTuretGroup = mCore.getCurrentObjectiveTurretGroup();
-	    if (objectiveTuretGroup != null)
-	    {
+	    if (objectiveTuretGroup != null) {
 		_prefs.put(PREFS_OT_GROUP, objectiveTuretGroup);
 		HashMap<String, Double> hashMag = mCore.getAvailableMagnifications();
-		if (hashMag != null)
-		{
+		if (hashMag != null) {
 		    XMLPreferences nodeObjectiveTurret = _prefs.node(objectiveTuretGroup);
-		    for (String currentKey : hashMag.keySet())
-		    {
+		    for (String currentKey : hashMag.keySet()) {
 			nodeObjectiveTurret.put(currentKey, "" + hashMag.get(currentKey));
 		    }
 		}
 	    }
 	    StrVector shutters = mCore.getLoadedDevicesOfType(DeviceType.ShutterDevice);
-	    for (String s : shutters)
-	    {
-		try
-		{
+	    for (String s : shutters) {
+		try {
 		    mCore.setShutterDevice(s);
 		    mCore.setShutterOpen(false);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 		    e.printStackTrace();
 		}
 	    }
 	    if (mCore.isSequenceRunning())
-		try
-		{
+		try {
 		    mCore.stopSequenceAcquisition();
-		}
-		catch (Exception e1)
-		{
+		} catch (Exception e1) {
 		    e1.printStackTrace();
 		}
-	    if (_list_plugin != null)
-	    {
+	    if (_list_plugin != null) {
 		for (int i = 0; i < _list_plugin.size(); ++i)
 		    _list_plugin.get(i).MainGUIClosed();
 	    }
-	    try
-	    {
+	    try {
 		mCore.unloadAllDevices();
-	    }
-	    catch (Exception e)
-	    {
+	    } catch (Exception e) {
 		e.printStackTrace();
 	    }
 	    mCore = null;
@@ -1403,8 +1218,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     }
 
     @Override
-    public void setSize(Dimension d)
-    {
+    public void setSize(Dimension d) {
 	super.setSize(d);
     }
 
@@ -1413,8 +1227,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * 
      * @return instance or new instance of the MMMainFrame
      */
-    public static MMMainFrame getInstance()
-    {
+    public static MMMainFrame getInstance() {
 	if (!instanced && !instancing)
 	    return new MMMainFrame();
 	return _singleton;
@@ -1423,8 +1236,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Singleton pattern This function delete the singleton
      */
-    public static void dispose()
-    {
+    public static void dispose() {
 	instanced = false;
 	instancing = false;
 	_singleton = null;
@@ -1435,118 +1247,92 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * 
      * @return Actual state of MMMainFrame
      */
-    public static boolean instanced()
-    {
+    public static boolean instanced() {
 	return instanced;
     }
 
     @Override
-    public void applyContrastSettings(ContrastSettings contrastsettings, ContrastSettings contrastsettings1)
-    {
+    public void applyContrastSettings(ContrastSettings contrastsettings, ContrastSettings contrastsettings1) {
     }
 
     @Override
-    public boolean displayImage(Object obj)
-    {
+    public boolean displayImage(Object obj) {
 	return false;
     }
 
     @Override
-    public boolean displayImageWithStatusLine(Object obj, String s)
-    {
+    public boolean displayImageWithStatusLine(Object obj, String s) {
 	return false;
     }
 
     @Override
-    public void displayStatusLine(String s)
-    {
+    public void displayStatusLine(String s) {
     }
 
     @Override
-    public void enableLiveMode(boolean flag)
-    {
+    public void enableLiveMode(boolean flag) {
     }
 
     /**
      * Initialize all the GUI.
      */
     @Override
-    public void initializeGUI()
-    {
-	ThreadUtil.invokeNow(new Runnable()
-	{
+    public void initializeGUI() {
+	ThreadUtil.invokeNow(new Runnable() {
 
 	    @Override
-	    public void run()
-	    {
+	    public void run() {
 		_camera_label = mCore.getCameraDevice();
-		if (_camera_label.length() > 0)
-		{
-		    if (_combo_binning.getItemCount() > 0)
-		    {
+		if (_camera_label.length() > 0) {
+		    if (_combo_binning.getItemCount() > 0) {
 			_combo_binning.removeAllItems();
 		    }
 		    StrVector binSizes;
-		    try
-		    {
+		    try {
 			binSizes = mCore.getAllowedPropertyValues(_camera_label, MMCoreJ.getG_Keyword_Binning());
-		    }
-		    catch (Exception e1)
-		    {
+		    } catch (Exception e1) {
 			binSizes = new StrVector();
 		    }
 		    ActionListener[] listeners = _combo_binning.getActionListeners();
-		    for (int i = 0; i < listeners.length; i++)
-		    {
+		    for (int i = 0; i < listeners.length; i++) {
 			_combo_binning.removeActionListener(listeners[i]);
 		    }
-		    for (int i = 0; i < binSizes.size(); i++)
-		    {
+		    for (int i = 0; i < binSizes.size(); i++) {
 			_combo_binning.addItem(binSizes.get(i));
 		    }
 		    _combo_binning.setMaximumRowCount((int) binSizes.size());
 		    if (binSizes.size() == 0L)
 			_combo_binning.setEditable(true);
-		    else
-		    {
+		    else {
 			_combo_binning.setEditable(false);
 		    }
 
-		    for (int i = 0; i < listeners.length; i++)
-		    {
+		    for (int i = 0; i < listeners.length; i++) {
 			_combo_binning.addActionListener(listeners[i]);
 		    }
 		    _combo_binning.setSelectedIndex(0);
 		}
-		try
-		{
+		try {
 		    _shutters = mCore.getLoadedDevicesOfType(DeviceType.ShutterDevice);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 		    e.printStackTrace();
 		}
 
-		if (_shutters != null)
-		{
+		if (_shutters != null) {
 		    String[] items = new String[(int) _shutters.size()];
-		    for (int i = 0; i < _shutters.size(); i++)
-		    {
+		    for (int i = 0; i < _shutters.size(); i++) {
 			items[i] = _shutters.get(i);
 		    }
 
 		    ActionListener[] listeners = _combo_shutters.getActionListeners();
-		    for (int i = 0; i < listeners.length; i++)
-		    {
+		    for (int i = 0; i < listeners.length; i++) {
 			_combo_shutters.removeActionListener(listeners[i]);
 		    }
-		    if (_combo_shutters.getItemCount() > 0)
-		    {
+		    if (_combo_shutters.getItemCount() > 0) {
 			_combo_shutters.removeAllItems();
 		    }
 
-		    for (int i = 0; i < items.length; i++)
-		    {
+		    for (int i = 0; i < items.length; i++) {
 			_combo_shutters.addItem(items[i]);
 		    }
 
@@ -1556,8 +1342,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 		    String activeShutter = mCore.getShutterDevice();
 		    if (activeShutter != null)
 			_combo_shutters.setSelectedItem(activeShutter);
-		    else
-		    {
+		    else {
 			_combo_shutters.setSelectedItem("");
 		    }
 		}
@@ -1602,48 +1387,40 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     }
 
     @Override
-    public boolean is16bit()
-    {
+    public boolean is16bit() {
 	return true;
     }
 
     @Override
-    public void makeActive()
-    {
+    public void makeActive() {
 	setVisible(true);
     }
 
     @Override
-    public boolean okToAcquire()
-    {
+    public boolean okToAcquire() {
 	return true;
     }
 
     @Override
-    public void refreshGUI()
-    {
-	ThreadUtil.invokeLater(new Runnable()
-	{
+    public void refreshGUI() {
+	ThreadUtil.invokeLater(new Runnable() {
 
 	    @Override
-	    public void run()
-	    {
+	    public void run() {
 		updateGUI(false);
 	    }
 	});
     }
 
     @Override
-    public void setBackgroundStyle(String s)
-    {
+    public void setBackgroundStyle(String s) {
     }
 
     /**
      * Notify all GUI parts that the configuration changed.
      */
     @Override
-    public void setConfigChanged(boolean status)
-    {
+    public void setConfigChanged(boolean status) {
 	if (!_isConfigLoaded)
 	    return;
 	_configChanged_ = status;
@@ -1651,28 +1428,23 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	notifyConfigChanged(null);
     }
 
-    protected void setConfigSaveButtonStatus(boolean changed)
-    {
+    protected void setConfigSaveButtonStatus(boolean changed) {
 	saveConfigButton_.setEnabled(changed);
     }
 
     @Override
-    public PositionList getPositionList()
-    {
+    public PositionList getPositionList() {
 	return _posList;
     }
 
     @Override
-    public void setPositionList(PositionList positionlist) throws MMScriptException
-    {
+    public void setPositionList(PositionList positionlist) throws MMScriptException {
 	_posList = PositionList.newInstance(positionlist);
     }
 
     @Override
-    public void showXYPositionList()
-    {
-	if (posListDlg_ == null)
-	{
+    public void showXYPositionList() {
+	if (posListDlg_ == null) {
 	    posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
 	    posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
 	}
@@ -1680,28 +1452,21 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     }
 
     @Override
-    public void stopAllActivity()
-    {
+    public void stopAllActivity() {
     }
 
     @Override
-    public void updateGUI(boolean updateConfigPadStructure)
-    {
+    public void updateGUI(boolean updateConfigPadStructure) {
 
-	if (updateConfigPadStructure && _groupPad != null)
-	{
+	if (updateConfigPadStructure && _groupPad != null) {
 	    if (_list_progress.size() == 0)
 		_groupPad.refreshStructure();
 	}
 	_panelAcquisitions.removeAll();
-	if (_list_progress.size() == 0)
-	{
+	if (_list_progress.size() == 0) {
 	    _panelAcquisitions.add(new JLabel("No acquisition running."));
-	}
-	else
-	{
-	    for (int i = 0; i < _list_progress.size(); ++i)
-	    {
+	} else {
+	    for (int i = 0; i < _list_progress.size(); ++i) {
 		RunningProgress prog = _list_progress.get(i);
 		_panelAcquisitions.add(Box.createRigidArea(new Dimension(1, 10)));
 		if (prog.valueDisplayed)
@@ -1712,14 +1477,11 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 		prog.setMinimum(0);
 		prog.setBounds(50, 50, 100, 30);
 
-		if (prog.plugin != null)
-		{
+		if (prog.plugin != null) {
 		    prog.setIndeterminate(false);
 		    prog.setMaximum(100);
 		    prog.setValue(prog.progress);
-		}
-		else
-		{
+		} else {
 		    prog.setIndeterminate(true);
 		    prog.setMaximum(1000);
 		}
@@ -1733,30 +1495,25 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     }
 
     @Override
-    public boolean updateImage()
-    {
+    public boolean updateImage() {
 	return false;
     }
 
-    public void selectConfigGroup(String groupName)
-    {
+    public void selectConfigGroup(String groupName) {
 	_groupPad.setGroup(groupName);
     }
 
     @Override
-    public void addMMBackgroundListener(Component arg0)
-    {
+    public void addMMBackgroundListener(Component arg0) {
     }
 
     @Override
-    public Color getBackgroundColor()
-    {
+    public Color getBackgroundColor() {
 	return null;
     }
 
     @Override
-    public void removeMMBackgroundListener(Component arg0)
-    {
+    public void removeMMBackgroundListener(Component arg0) {
     }
 
     /**
@@ -1767,8 +1524,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      *            : plugin to be added.
      * @see #removePlugin(MicroscopePlugin)
      */
-    public void addPlugin(MicroscopePlugin plugin)
-    {
+    public void addPlugin(MicroscopePlugin plugin) {
 	if (!instanced)
 	    return;
 	if (!_isConfigLoaded)
@@ -1786,8 +1542,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      *            : plugin to be removed.
      * @see #addPlugin(MicroscopePlugin)
      */
-    public void removePlugin(MicroscopePlugin plugin)
-    {
+    public void removePlugin(MicroscopePlugin plugin) {
 	if (!instanced)
 	    return;
 	if (!_isConfigLoaded)
@@ -1806,22 +1561,17 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @param o
      *            : Object notifying that it needs continuwous acquisition.
      */
-    public void continuousAcquisitionNeeded(Object o)
-    {
+    public void continuousAcquisitionNeeded(Object o) {
 	if (!instanced)
 	    return;
 	if (!_isConfigLoaded)
 	    return;
-	if (!mCore.isSequenceRunning())
-	{
-	    try
-	    {
+	if (!mCore.isSequenceRunning()) {
+	    try {
 		mCore.startContinuousSequenceAcquisition(0.0D);
 		_list_progress.add(continuousProgress);
 		refreshGUI();
-	    }
-	    catch (Exception e1)
-	    {
+	    } catch (Exception e1) {
 		e1.printStackTrace();
 	    }
 	}
@@ -1837,23 +1587,18 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      *            : Object notifying that it stops using continuous acquisition.
      * @see #continuousAcquisitionNeeded(Object)
      */
-    public void continuousAcquisitionReleased(Object o)
-    {
+    public void continuousAcquisitionReleased(Object o) {
 	if (!instanced)
 	    return;
 	if (!_isConfigLoaded)
 	    return;
 	_plugin_contAcq_list.remove(o);
-	if (_plugin_contAcq_list.isEmpty())
-	{
-	    try
-	    {
+	if (_plugin_contAcq_list.isEmpty()) {
+	    try {
 		mCore.stopSequenceAcquisition();
 		_list_progress.remove(continuousProgress);
 		refreshGUI();
-	    }
-	    catch (Exception e)
-	    {
+	    } catch (Exception e) {
 		e.printStackTrace();
 	    }
 	}
@@ -1862,8 +1607,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Refreshes the group pad when a plugin modified the config.
      */
-    public void configChanged()
-    {
+    public void configChanged() {
 	updateGUI(true);
     }
 
@@ -1879,26 +1623,22 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @see #notifyAcquisitionOver(MicroscopePluginAcquisition)
      * @see #notifyProgress(MicroscopePluginAcquisition, int)
      */
-    public void notifyAcquisitionStarting(final MicroscopePluginAcquisition plugin, final boolean valueDisplayed)
-    {
+    public void notifyAcquisitionStarting(final MicroscopePluginAcquisition plugin, final boolean valueDisplayed) {
 	int i = 0;
 	String name = plugin.getRenderedName();
 	// we want to add an index to the name if another plugin
 	// with this name is already running an acquisition.
-	for (RunningProgress runp : _list_progress)
-	{
+	for (RunningProgress runp : _list_progress) {
 	    if (runp.renderedName.contains(name))
 		++i;
 	}
 	if (i != 0)
 	    name = name + " (" + (i + 1) + ")";
 	final String namefinal = name;
-	ThreadUtil.invokeNow(new Runnable()
-	{
+	ThreadUtil.invokeNow(new Runnable() {
 
 	    @Override
-	    public void run()
-	    {
+	    public void run() {
 		_list_progress.add(new RunningProgress(plugin, namefinal, valueDisplayed));
 	    }
 	});
@@ -1912,10 +1652,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @see #notifyAcquisitionStarting(MicroscopePluginAcquisition, boolean)
      * @see #notifyProgress(MicroscopePluginAcquisition, int)
      */
-    public void notifyAcquisitionOver(MicroscopePluginAcquisition plugin)
-    {
-	if (plugin != null)
-	{
+    public void notifyAcquisitionOver(MicroscopePluginAcquisition plugin) {
+	if (plugin != null) {
 	    int idx = indexOfPlugin(plugin);
 	    if (idx >= 0)
 		_list_progress.remove(idx);
@@ -1931,8 +1669,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @see #notifyAcquisitionStarting(MicroscopePluginAcquisition, boolean)
      * @see #notifyAcquisitionOver(MicroscopePluginAcquisition)
      */
-    public void notifyProgress(MicroscopePluginAcquisition plugin, int progress)
-    {
+    public void notifyProgress(MicroscopePluginAcquisition plugin, int progress) {
 	int idx = indexOfPlugin(plugin);
 	if (idx >= 0)
 	    _list_progress.get(indexOfPlugin(plugin)).setProgress(progress);
@@ -1949,29 +1686,23 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @param item
      *            : item which is going to change.
      */
-    public void notifyConfigAboutToChange(StateItem item)
-    {
+    public void notifyConfigAboutToChange(StateItem item) {
 	if (!instanced)
 	    return;
 	if (!_isConfigLoaded)
 	    return;
 	editor.pauseThread();
 	ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
-	for (MicroscopePlugin p : _list_plugin)
-	{
-	    try
-	    {
+	for (MicroscopePlugin p : _list_plugin) {
+	    try {
 		p.notifyConfigAboutToChange(item);
-	    }
-	    catch (Exception e)
-	    {
+	    } catch (Exception e) {
 		// if an error occurs, the plugin is removed from the list.
 		e.printStackTrace();
 		todeletelist.add(p);
 	    }
 	}
-	for (MicroscopePlugin p : todeletelist)
-	{
+	for (MicroscopePlugin p : todeletelist) {
 	    _list_plugin.remove(p);
 	}
 	editor.resumeThread();
@@ -1987,49 +1718,37 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @param item
      *            : item changed.
      */
-    public void notifyConfigChanged(final StateItem item)
-    {
+    public void notifyConfigChanged(final StateItem item) {
 	if (!instanced)
 	    return;
 	if (!_isConfigLoaded)
 	    return;
-	if (advancedDlg != null && (advancedDlg.waitingForObjectiveChange || advancedDlg.waitingForBlockChange))
-	{
-	    ThreadUtil.bgRun(new Runnable()
-	    {
+	if (advancedDlg != null && (advancedDlg.waitingForObjectiveChange || advancedDlg.waitingForBlockChange)) {
+	    ThreadUtil.bgRun(new Runnable() {
 
 		@Override
-		public void run()
-		{
-		    try
-		    {
+		public void run() {
+		    try {
 			Thread.sleep(800);
+		    } catch (InterruptedException e) {
 		    }
-		    catch (InterruptedException e)
-		    {
-		    }
-		    ThreadUtil.invokeNow(new Runnable()
-		    {
+		    ThreadUtil.invokeNow(new Runnable() {
 			@Override
-			public void run()
-			{
-			    if (advancedDlg.waitingForObjectiveChange)
-			    {
-				if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
-					+ "</b></div>   as your Objective Turret configuration ?</html>"))
-				{
+			public void run() {
+			    if (advancedDlg.waitingForObjectiveChange) {
+				if (ConfirmDialog.confirm("Confirmation",
+					"<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
+						+ "</b></div>   as your Objective Turret configuration ?</html>")) {
 				    mCore.setCurrentObjectiveTurretGroup(item.group);
 				    String res = mCore.getCurrentObjectiveTurretGroup();
 				    if (res != null)
 					advancedDlg.lblCurrentObjectiveTurretGroup.setText("<html><b>" + res + "</b></html>");
 				}
 				advancedDlg.waitingForObjectiveChange = false;
-			    }
-			    else if (advancedDlg.waitingForBlockChange)
-			    {
-				if (ConfirmDialog.confirm("Confirmation", "<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
-					+ "</b></div>  as your Filter Block configuration ?</html>"))
-				{
+			    } else if (advancedDlg.waitingForBlockChange) {
+				if (ConfirmDialog.confirm("Confirmation",
+					"<html>Are you sure you want to set: <br/><div align=\"center\"><b>" + item.group
+						+ "</b></div>  as your Filter Block configuration ?</html>")) {
 				    mCore.setCurrentFilterBlockGroup(item.group);
 				    String res = mCore.getCurrentFilterBlockGroup();
 				    if (res != null)
@@ -2041,24 +1760,17 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 		    });
 		}
 	    });
-	}
-	else
-	{
+	} else {
 	    ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
-	    for (MicroscopePlugin p : _list_plugin)
-	    {
-		try
-		{
+	    for (MicroscopePlugin p : _list_plugin) {
+		try {
 		    p.notifyConfigChanged(item);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 		    e.printStackTrace();
 		    todeletelist.add(p);
 		}
 	    }
-	    for (MicroscopePlugin p : todeletelist)
-	    {
+	    for (MicroscopePlugin p : todeletelist) {
 		_list_plugin.remove(p);
 	    }
 	    updateGUI(true);
@@ -2072,12 +1784,9 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      *            : plugin to find
      * @return Returns the index if existing, -1 if not existing or null.
      */
-    private int indexOfPlugin(MicroscopePluginAcquisition plugin)
-    {
-	if (plugin != null)
-	{
-	    for (int i = 0; i < _list_progress.size(); ++i)
-	    {
+    private int indexOfPlugin(MicroscopePluginAcquisition plugin) {
+	if (plugin != null) {
+	    for (int i = 0; i < _list_progress.size(); ++i) {
 		if (plugin != null && _list_progress.get(i).plugin == plugin)
 		    return i;
 	    }
@@ -2093,8 +1802,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @author Thomas Provoost
      * 
      */
-    private class RunningProgress extends JProgressBar
-    {
+    private class RunningProgress extends JProgressBar {
 	/** generated UID */
 	private static final long serialVersionUID = 1L;
 	private int progress = 0;
@@ -2111,8 +1819,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	 * @param valueDisplayed
 	 *            : Display or not the progress as text.
 	 */
-	public RunningProgress(MicroscopePluginAcquisition plugin, String pluginName, boolean valueDisplayed)
-	{
+	public RunningProgress(MicroscopePluginAcquisition plugin, String pluginName, boolean valueDisplayed) {
 	    this.plugin = plugin;
 	    this.renderedName = pluginName;
 	    this.valueDisplayed = valueDisplayed;
@@ -2121,8 +1828,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	/**
 	 * Used only for Continuous Acquisition.
 	 */
-	public RunningProgress()
-	{
+	public RunningProgress() {
 	    plugin = null;
 	    renderedName = "Continuous Acquisition";
 	    valueDisplayed = false;
@@ -2134,14 +1840,12 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	 * @param progress
 	 *            : new progress value.
 	 */
-	public void setProgress(int progress)
-	{
+	public void setProgress(int progress) {
 	    this.progress = progress;
 	}
 
 	@SuppressWarnings("unused")
-	public int getProgress()
-	{
+	public int getProgress() {
 	    return progress;
 	}
     }
@@ -2149,8 +1853,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * @return Returns if this class is being instanced.
      */
-    public static boolean isInstancing()
-    {
+    public static boolean isInstancing() {
 	return instancing;
     }
 
@@ -2158,37 +1861,31 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * 
      * @return Returns if the configuration file is loaded.
      */
-    public boolean isConfigLoaded()
-    {
+    public boolean isConfigLoaded() {
 	return _isConfigLoaded;
     }
 
     @Override
-    public String getBackgroundStyle()
-    {
+    public String getBackgroundStyle() {
 	return null;
     }
 
     @Override
-    public ContrastSettings getContrastSettings()
-    {
+    public ContrastSettings getContrastSettings() {
 	return null;
     }
 
     @Override
-    public boolean getLiveMode()
-    {
+    public boolean getLiveMode() {
 	return false;
     }
 
     @Override
-    public String getVersion()
-    {
+    public String getVersion() {
 	return "0.1";
     }
 
-    public String getConfigFile()
-    {
+    public String getConfigFile() {
 	return _sysConfigFile;
     }
 
@@ -2197,20 +1894,16 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * 
      * @return Returns null if Dialog exited.
      */
-    private String xmlFileChooser()
-    {
+    private String xmlFileChooser() {
 	String filename = null;
 	JFileChooser fc = new JFileChooser();
 	fc.setFileFilter(new FileNameExtensionFilter("Sate Files (.xml)", "xml"));
 	int returnVal = fc.showDialog(Icy.getMainInterface().getMainFrame(), "Save File");
-	if (returnVal == JFileChooser.APPROVE_OPTION)
-	{
+	if (returnVal == JFileChooser.APPROVE_OPTION) {
 	    filename = fc.getSelectedFile().getAbsolutePath();
 	    if (!filename.endsWith(".xml"))
 		filename += ".xml";
-	}
-	else
-	{
+	} else {
 	    filename = null;
 	}
 	return filename;
@@ -2220,8 +1913,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Load the preset settings.
      */
-    private void loadPresets()
-    {
+    private void loadPresets() {
 	String filename = xmlFileChooser();
 	if (filename == null)
 	    return;
@@ -2233,8 +1925,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Save the preset settings.
      */
-    private void savePresets()
-    {
+    private void savePresets() {
 	String filename = xmlFileChooser();
 	if (filename == null)
 	    return;
@@ -2249,23 +1940,17 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @param root
      *            : file and node where data is saved.
      */
-    private void saveToXML(XMLPreferences root)
-    {
+    private void saveToXML(XMLPreferences root) {
 	StrVector devices = mCore.getLoadedDevices();
-	for (int i = 0; i < devices.size(); i++)
-	{
+	for (int i = 0; i < devices.size(); i++) {
 	    XMLPreferences prefs = root.node(devices.get(i));
 	    StrVector properties;
-	    try
-	    {
+	    try {
 		properties = mCore.getDevicePropertyNames(devices.get(i));
-	    }
-	    catch (Exception e)
-	    {
+	    } catch (Exception e) {
 		continue;
 	    }
-	    for (int j = 0; j < properties.size(); j++)
-	    {
+	    for (int j = 0; j < properties.size(); j++) {
 		PropertyItem item = new PropertyItem();
 		item.readFromCore(mCore, devices.get(i), properties.get(j));
 		prefs.put(properties.get(j), item.value);
@@ -2279,22 +1964,15 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      * @param root
      *            : file and node where data is saved.
      */
-    private void loadXMLFile(XMLPreferences root)
-    {
-	for (XMLPreferences device : root.getChildren())
-	{
-	    for (String propName : device.keys())
-	    {
+    private void loadXMLFile(XMLPreferences root) {
+	for (XMLPreferences device : root.getChildren()) {
+	    for (String propName : device.keys()) {
 		String value = device.get(propName, "");
-		if (value != "")
-		{
-		    try
-		    {
+		if (value != "") {
+		    try {
 			mCore.setProperty(device.name(), propName, value);
 			mCore.waitForSystem();
-		    }
-		    catch (Exception e)
-		    {
+		    } catch (Exception e) {
 			continue;
 		    }
 		}
@@ -2302,8 +1980,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	}
     }
 
-    private class AdvancedConfigurationDialog extends JDialog
-    {
+    private class AdvancedConfigurationDialog extends JDialog {
 
 	private boolean waitingForObjectiveChange = false;
 	private boolean waitingForBlockChange = false;
@@ -2313,8 +1990,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	JLabel lblCurrentObjectiveTurretGroup;
 	JLabel lblCurrentFilterBLockGroup;
 
-	public AdvancedConfigurationDialog()
-	{
+	public AdvancedConfigurationDialog() {
 	    super(Icy.getMainInterface().getMainFrame(), "Advanced Configuration Dialog", false);
 
 	    JPanel panelDevices = new JPanel(new GridLayout(2, 3));
@@ -2329,12 +2005,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	    lblCurrentObjectiveTurretGroup.setHorizontalAlignment(SwingConstants.CENTER);
 	    panelDevices.add(lblCurrentObjectiveTurretGroup);
 	    JButton btnSetTurretConfig = new JButton("Set");
-	    btnSetTurretConfig.addActionListener(new ActionListener()
-	    {
+	    btnSetTurretConfig.addActionListener(new ActionListener() {
 
 		@Override
-		public void actionPerformed(ActionEvent e)
-		{
+		public void actionPerformed(ActionEvent e) {
 		    MessageDialog.showDialog("<html>Please modify the preset of the objective turret's group.<br/>"
 			    + "<br/><i>Exemple: switch from 10x to 20x.</i></html>");
 		    if (waitingForBlockChange)
@@ -2353,12 +2027,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	    lblCurrentFilterBLockGroup.setHorizontalAlignment(SwingConstants.CENTER);
 	    panelDevices.add(lblCurrentFilterBLockGroup);
 	    JButton btnSetFilterBlock = new JButton("Set");
-	    btnSetFilterBlock.addActionListener(new ActionListener()
-	    {
+	    btnSetFilterBlock.addActionListener(new ActionListener() {
 
 		@Override
-		public void actionPerformed(ActionEvent e)
-		{
+		public void actionPerformed(ActionEvent e) {
 		    MessageDialog.showDialog("<html>Please modify the preset of the filter block's group.<br/>"
 			    + "<br/><i>Exemple: switch from GFP to Texas Red.</i></html>");
 		    if (waitingForObjectiveChange)
@@ -2374,12 +2046,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	    panelInvertX.setLayout(new BoxLayout(panelInvertX, BoxLayout.X_AXIS));
 	    final JCheckBox cboxInvertX = new JCheckBox("Invert X");
 	    cboxInvertX.setSelected(StageMover.isInvertX());
-	    cboxInvertX.addActionListener(new ActionListener()
-	    {
+	    cboxInvertX.addActionListener(new ActionListener() {
 
 		@Override
-		public void actionPerformed(ActionEvent e)
-		{
+		public void actionPerformed(ActionEvent e) {
 		    StageMover.setInvertX(cboxInvertX.isSelected());
 		}
 	    });
@@ -2388,12 +2058,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	    JPanel panelInvertY = new JPanel();
 	    panelInvertY.setLayout(new BoxLayout(panelInvertY, BoxLayout.X_AXIS));
 	    final JCheckBox cboxInvertY = new JCheckBox("Invert Y");
-	    cboxInvertY.addActionListener(new ActionListener()
-	    {
+	    cboxInvertY.addActionListener(new ActionListener() {
 
 		@Override
-		public void actionPerformed(ActionEvent e)
-		{
+		public void actionPerformed(ActionEvent e) {
 		    StageMover.setInvertY(cboxInvertY.isSelected());
 		    cboxInvertY.setSelected(StageMover.isInvertY());
 		}
@@ -2403,12 +2071,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	    JPanel panelInvertZ = new JPanel();
 	    panelInvertZ.setLayout(new BoxLayout(panelInvertZ, BoxLayout.X_AXIS));
 	    final JCheckBox cboxInvertZ = new JCheckBox("Invert Z");
-	    cboxInvertZ.addActionListener(new ActionListener()
-	    {
+	    cboxInvertZ.addActionListener(new ActionListener() {
 
 		@Override
-		public void actionPerformed(ActionEvent e)
-		{
+		public void actionPerformed(ActionEvent e) {
 		    StageMover.setInvertZ(cboxInvertZ.isSelected());
 		    cboxInvertZ.setSelected(StageMover.isInvertZ());
 		}
@@ -2418,12 +2084,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	    JPanel panelSwitchXY = new JPanel();
 	    panelSwitchXY.setLayout(new BoxLayout(panelSwitchXY, BoxLayout.X_AXIS));
 	    final JCheckBox cboxSwitchXY = new JCheckBox("Switch X/Y");
-	    cboxSwitchXY.addActionListener(new ActionListener()
-	    {
+	    cboxSwitchXY.addActionListener(new ActionListener() {
 
 		@Override
-		public void actionPerformed(ActionEvent e)
-		{
+		public void actionPerformed(ActionEvent e) {
 		    StageMover.setSwitchXY(cboxSwitchXY.isSelected());
 		    cboxSwitchXY.setSelected(StageMover.isSwitchXY());
 		}
@@ -2438,12 +2102,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	    JPanel mainPanel = new JPanel(new BorderLayout());
 	    JButton btnClose = new JButton("Close");
 	    btnClose.setSize(30, 20);
-	    btnClose.addActionListener(new ActionListener()
-	    {
+	    btnClose.addActionListener(new ActionListener() {
 
 		@Override
-		public void actionPerformed(ActionEvent e)
-		{
+		public void actionPerformed(ActionEvent e) {
 		    setVisible(false);
 		}
 	    });
@@ -2465,14 +2127,11 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
 	    add(new IcyLogo("Advanced Configuration Dialog"), BorderLayout.NORTH);
 	    add(mainPanel, BorderLayout.CENTER);
 	    pack();
-	    addKeyListener(new KeyAdapter()
-	    {
+	    addKeyListener(new KeyAdapter() {
 		@Override
-		public void keyPressed(KeyEvent e)
-		{
+		public void keyPressed(KeyEvent e) {
 		    int vk = e.getKeyCode();
-		    if (vk == KeyEvent.VK_ENTER || vk == KeyEvent.VK_ESCAPE)
-		    {
+		    if (vk == KeyEvent.VK_ENTER || vk == KeyEvent.VK_ESCAPE) {
 			setVisible(false);
 		    }
 		}
@@ -2487,744 +2146,637 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      */
 
     @Override
-    public void sleep(long l) throws MMScriptException
-    {
+    public void sleep(long l) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void message(String s) throws MMScriptException
-    {
+    public void message(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void clearMessageWindow() throws MMScriptException
-    {
+    public void clearMessageWindow() throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void snapSingleImage()
-    {
+    public void snapSingleImage() {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void openAcquisition(String s, String s1, int i, int j, int k) throws MMScriptException
-    {
+    public void openAcquisition(String s, String s1, int i, int j, int k) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void openAcquisition(String s, String s1, int i, int j, int k, int l) throws MMScriptException
-    {
+    public void openAcquisition(String s, String s1, int i, int j, int k, int l) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void openAcquisition(String s, String s1, int i, int j, int k, int l, boolean flag) throws MMScriptException
-    {
+    public void openAcquisition(String s, String s1, int i, int j, int k, int l, boolean flag) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void openAcquisition(String s, String s1, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException
-    {
+    public void openAcquisition(String s, String s1, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void openAcquisition(String s, String s1, int i, int j, int k, boolean flag) throws MMScriptException
-    {
+    public void openAcquisition(String s, String s1, int i, int j, int k, boolean flag) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void openAcquisition(String s, String s1, int i, int j, int k, boolean flag, boolean flag1) throws MMScriptException
-    {
+    public void openAcquisition(String s, String s1, int i, int j, int k, boolean flag, boolean flag1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public String createAcquisition(JSONObject jsonobject, boolean flag)
-    {
+    public String createAcquisition(JSONObject jsonobject, boolean flag) {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public String getUniqueAcquisitionName(String s)
-    {
+    public String getUniqueAcquisitionName(String s) {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public String getCurrentAlbum()
-    {
+    public String getCurrentAlbum() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void addToAlbum(TaggedImage taggedimage) throws MMScriptException
-    {
+    public void addToAlbum(TaggedImage taggedimage) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void initializeSimpleAcquisition(String s, int i, int j, int k, int l, int i1) throws MMScriptException
-    {
+    public void initializeSimpleAcquisition(String s, int i, int j, int k, int l, int i1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void initializeAcquisition(String s, int i, int j, int k) throws MMScriptException
-    {
+    public void initializeAcquisition(String s, int i, int j, int k) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void initializeAcquisition(String s, int i, int j, int k, int l) throws MMScriptException
-    {
+    public void initializeAcquisition(String s, int i, int j, int k, int l) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public Boolean acquisitionExists(String s)
-    {
+    public Boolean acquisitionExists(String s) {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void closeAcquisition(String s) throws MMScriptException
-    {
+    public void closeAcquisition(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void closeAllAcquisitions()
-    {
+    public void closeAllAcquisitions() {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public MMAcquisition getCurrentAcquisition()
-    {
+    public MMAcquisition getCurrentAcquisition() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public String[] getAcquisitionNames()
-    {
+    public String[] getAcquisitionNames() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public MMAcquisition getAcquisition(String s) throws MMScriptException
-    {
+    public MMAcquisition getAcquisition(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void snapAndAddImage(String s, int i, int j, int k) throws MMScriptException
-    {
+    public void snapAndAddImage(String s, int i, int j, int k) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void snapAndAddImage(String s, int i, int j, int k, int l) throws MMScriptException
-    {
+    public void snapAndAddImage(String s, int i, int j, int k, int l) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void addImage(String s, Object obj, int i, int j, int k) throws MMScriptException
-    {
+    public void addImage(String s, Object obj, int i, int j, int k) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void addImage(String s, TaggedImage taggedimage) throws MMScriptException
-    {
+    public void addImage(String s, TaggedImage taggedimage) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void addImage(String s, TaggedImage taggedimage, boolean flag) throws MMScriptException
-    {
+    public void addImage(String s, TaggedImage taggedimage, boolean flag) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void addImage(String s, TaggedImage taggedimage, boolean flag, boolean flag1) throws MMScriptException
-    {
+    public void addImage(String s, TaggedImage taggedimage, boolean flag, boolean flag1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l) throws MMScriptException
-    {
+    public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag) throws MMScriptException
-    {
+    public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag, boolean flag1) throws MMScriptException
-    {
+    public void addImage(String s, TaggedImage taggedimage, int i, int j, int k, int l, boolean flag, boolean flag1)
+	    throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public int getAcquisitionImageWidth(String s) throws MMScriptException
-    {
+    public int getAcquisitionImageWidth(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return 0;
     }
 
     @Override
-    public int getAcquisitionImageHeight(String s) throws MMScriptException
-    {
+    public int getAcquisitionImageHeight(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return 0;
     }
 
     @Override
-    public int getAcquisitionImageBitDepth(String s) throws MMScriptException
-    {
+    public int getAcquisitionImageBitDepth(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return 0;
     }
 
     @Override
-    public int getAcquisitionImageByteDepth(String s) throws MMScriptException
-    {
+    public int getAcquisitionImageByteDepth(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return 0;
     }
 
     @Override
-    public int getAcquisitionMultiCamNumChannels(String s) throws MMScriptException
-    {
+    public int getAcquisitionMultiCamNumChannels(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return 0;
     }
 
     @Override
-    public void setAcquisitionProperty(String s, String s1, String s2) throws MMScriptException
-    {
+    public void setAcquisitionProperty(String s, String s1, String s2) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setAcquisitionSystemState(String s, JSONObject jsonobject) throws MMScriptException
-    {
+    public void setAcquisitionSystemState(String s, JSONObject jsonobject) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setAcquisitionSummary(String s, JSONObject jsonobject) throws MMScriptException
-    {
+    public void setAcquisitionSummary(String s, JSONObject jsonobject) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setImageProperty(String s, int i, int j, int k, String s1, String s2) throws MMScriptException
-    {
+    public void setImageProperty(String s, int i, int j, int k, String s1, String s2) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void runBurstAcquisition() throws MMScriptException
-    {
+    public void runBurstAcquisition() throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void runBurstAcquisition(int i, String s, String s1) throws MMScriptException
-    {
+    public void runBurstAcquisition(int i, String s, String s1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void runBurstAcquisition(int i) throws MMScriptException
-    {
+    public void runBurstAcquisition(int i) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void loadBurstAcquisition(String s) throws MMScriptException
-    {
+    public void loadBurstAcquisition(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public String runAcquisition() throws MMScriptException
-    {
+    public String runAcquisition() throws MMScriptException {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public String runAcqusition(String s, String s1) throws MMScriptException
-    {
+    public String runAcqusition(String s, String s1) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public String runAcquisition(String s, String s1) throws MMScriptException
-    {
+    public String runAcquisition(String s, String s1) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void loadAcquisition(String s) throws MMScriptException
-    {
+    public void loadAcquisition(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setChannelColor(String s, int i, Color color) throws MMScriptException
-    {
+    public void setChannelColor(String s, int i, Color color) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setChannelName(String s, int i, String s1) throws MMScriptException
-    {
+    public void setChannelName(String s, int i, String s1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setChannelContrast(String s, int i, int j, int k) throws MMScriptException
-    {
+    public void setChannelContrast(String s, int i, int j, int k) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setContrastBasedOnFrame(String s, int i, int j) throws MMScriptException
-    {
+    public void setContrastBasedOnFrame(String s, int i, int j) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void closeAcquisitionImage5D(String s) throws MMScriptException
-    {
+    public void closeAcquisitionImage5D(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void closeAcquisitionWindow(String s) throws MMScriptException
-    {
+    public void closeAcquisitionWindow(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public java.awt.geom.Point2D.Double getXYStagePosition() throws MMScriptException
-    {
+    public java.awt.geom.Point2D.Double getXYStagePosition() throws MMScriptException {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void setStagePosition(double d) throws MMScriptException
-    {
+    public void setStagePosition(double d) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setRelativeStagePosition(double d) throws MMScriptException
-    {
+    public void setRelativeStagePosition(double d) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setXYStagePosition(double d, double d1) throws MMScriptException
-    {
+    public void setXYStagePosition(double d, double d1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void setRelativeXYStagePosition(double d, double d1) throws MMScriptException
-    {
+    public void setRelativeXYStagePosition(double d, double d1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public String getXYStageName()
-    {
+    public String getXYStageName() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void setXYOrigin(double d, double d1) throws MMScriptException
-    {
+    public void setXYOrigin(double d, double d1) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void saveConfigPresets()
-    {
+    public void saveConfigPresets() {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public ImageWindow getImageWin()
-    {
+    public ImageWindow getImageWin() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public ImageWindow getSnapLiveWin()
-    {
+    public ImageWindow getSnapLiveWin() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public String installPlugin(String s)
-    {
+    public String installPlugin(String s) {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public String installPlugin(String s, String s1)
-    {
+    public String installPlugin(String s, String s1) {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public String installAutofocusPlugin(String s)
-    {
+    public String installAutofocusPlugin(String s) {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public CMMCore getMMCore()
-    {
+    public CMMCore getMMCore() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public Autofocus getAutofocus()
-    {
+    public Autofocus getAutofocus() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void showAutofocusDialog()
-    {
+    public void showAutofocusDialog() {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public AcquisitionEngine getAcquisitionEngine()
-    {
+    public AcquisitionEngine getAcquisitionEngine() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void logMessage(String s)
-    {
+    public void logMessage(String s) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void showMessage(String s)
-    {
+    public void showMessage(String s) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void logError(Exception exception, String s)
-    {
+    public void logError(Exception exception, String s) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void logError(Exception exception)
-    {
+    public void logError(Exception exception) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void logError(String s)
-    {
+    public void logError(String s) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void showError(Exception exception, String s)
-    {
+    public void showError(Exception exception, String s) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void showError(Exception exception)
-    {
+    public void showError(Exception exception) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void showError(String s)
-    {
+    public void showError(String s) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void addMMListener(MMListenerInterface mmlistenerinterface)
-    {
+    public void addMMListener(MMListenerInterface mmlistenerinterface) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void removeMMListener(MMListenerInterface mmlistenerinterface)
-    {
+    public void removeMMListener(MMListenerInterface mmlistenerinterface) {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public boolean displayImage(TaggedImage taggedimage)
-    {
+    public boolean displayImage(TaggedImage taggedimage) {
 	// TODO Auto-generated method stub
 	return false;
     }
 
     @Override
-    public boolean isLiveModeOn()
-    {
+    public boolean isLiveModeOn() {
 	// TODO Auto-generated method stub
 	return false;
     }
 
     @Override
-    public Rectangle getROI() throws MMScriptException
-    {
+    public Rectangle getROI() throws MMScriptException {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void setROI(Rectangle rectangle) throws MMScriptException
-    {
+    public void setROI(Rectangle rectangle) throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public ImageCache getAcquisitionImageCache(String s)
-    {
+    public ImageCache getAcquisitionImageCache(String s) {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public void markCurrentPosition()
-    {
+    public void markCurrentPosition() {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public AcqControlDlg getAcqDlg()
-    {
+    public AcqControlDlg getAcqDlg() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public PositionListDlg getXYPosListDlg()
-    {
+    public PositionListDlg getXYPosListDlg() {
 	// TODO Auto-generated method stub
 	return null;
     }
 
     @Override
-    public boolean isAcquisitionRunning()
-    {
+    public boolean isAcquisitionRunning() {
 	// TODO Auto-generated method stub
 	return false;
     }
 
     @Override
-    public boolean versionLessThan(String s) throws MMScriptException
-    {
+    public boolean versionLessThan(String s) throws MMScriptException {
 	// TODO Auto-generated method stub
 	return false;
     }
 
     @Override
-    public void logStartupProperties()
-    {
+    public void logStartupProperties() {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public AutofocusManager getAutofocusManager()
-    {
+    public AutofocusManager getAutofocusManager() {
 	return _afMgr;
     }
 
     @Override
-    public boolean isBurstAcquisitionRunning() throws MMScriptException
-    {
+    public boolean isBurstAcquisitionRunning() throws MMScriptException {
 	// TODO Auto-generated method stub
 	return false;
     }
 
     @Override
-    public void startAcquisition() throws MMScriptException
-    {
+    public void startAcquisition() throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void startBurstAcquisition() throws MMScriptException
-    {
+    public void startBurstAcquisition() throws MMScriptException {
 	// TODO Auto-generated method stub
 
     }
 
     @Override
-    public void openAcquisitionData(String s, boolean flag)
-    {
+    public void openAcquisitionData(String s, boolean flag) {
 	// TODO Auto-generated method stub
     }
 
     @Override
-    public void enableRoiButtons(boolean flag)
-    {
+    public void enableRoiButtons(boolean flag) {
 	// TODO Auto-generated method stub
 
     }
 
-    public class EventCallBackManager extends MMEventCallback
-    {
+    public class EventCallBackManager extends MMEventCallback {
 
 	@Override
-	public void onPropertyChanged(String s, String s1, String s2)
-	{
+	public void onPropertyChanged(String s, String s1, String s2) {
 	    // handle property changed
 	}
 
 	@Override
-	public void onPixelSizeChanged(double d)
-	{
+	public void onPixelSizeChanged(double d) {
 	    // handle pixel size changed
 	}
 
 	@Override
-	public void onConfigGroupChanged(String s, String s1)
-	{
+	public void onConfigGroupChanged(String s, String s1) {
 	    // handle config group changed
 	    System.out.println(s + " / " + s1);
 	}
 
 	@Override
-	public void onPropertiesChanged()
-	{
+	public void onPropertiesChanged() {
 	    // handle properties changed
 	}
 
 	@Override
-	public void onStagePositionChanged(String s, double z)
-	{
+	public void onStagePositionChanged(String s, double z) {
 	    StageMover.onStagePositionChanged(s, z);
 	}
 
 	@Override
-	public void onStagePositionChangedRelative(String s, double z)
-	{
+	public void onStagePositionChangedRelative(String s, double z) {
 	    StageMover.onStagePositionChangedRelative(s, z);
 	}
 
-	public void onXYStagePositionChanged(String s, double d, double d1)
-	{
+	public void onXYStagePositionChanged(String s, double d, double d1) {
 	    StageMover.onXYStagePositionChanged(s, d, d1);
 	};
 
 	@Override
-	public void onXYStagePositionChangedRelative(String s, double d, double d1)
-	{
+	public void onXYStagePositionChangedRelative(String s, double d, double d1) {
 	    StageMover.onXYStagePositionChangedRelative(s, d, d1);
 	}
     }
