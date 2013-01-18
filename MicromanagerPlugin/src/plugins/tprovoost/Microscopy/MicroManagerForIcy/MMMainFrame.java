@@ -1429,7 +1429,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
             mCore = null;
             MicroscopeCore.releaseCore();
         }
-        dispose();
+        delete();
         super.onClosed();
     }
 
