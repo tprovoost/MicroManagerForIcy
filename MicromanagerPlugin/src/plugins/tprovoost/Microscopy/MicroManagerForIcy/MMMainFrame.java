@@ -866,7 +866,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
                             @Override
                             public void icyFrameClosing(IcyFrameEvent e)
                             {
-                                close();
+                                dispose();
                             }
                         });
                         acceptListener = new AcceptListener()
@@ -875,7 +875,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
                             @Override
                             public boolean accept(Object source)
                             {
-                                close();
+                                dispose();
                                 return _pluginListEmpty;
                             }
                         };
