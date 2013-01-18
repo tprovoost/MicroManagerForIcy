@@ -23,7 +23,7 @@ public class MicromanagerPlugin extends PluginActionable {
 			MessageDialog.showDialog("Error while initializing the microscope.\n"
 					+ "Please check if all devices are correctly turned on and recognized by the computer and\n"
 					+ "quit Micro Manager or any program using the microscope and/or the camera.");
-			MMMainFrame.dispose();
+			MMMainFrame.delete();
 		}
 	}
 

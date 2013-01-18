@@ -8,12 +8,13 @@ import icy.gui.dialog.MessageDialog;
 import icy.gui.frame.IcyFrame;
 import icy.gui.frame.IcyFrameAdapter;
 import icy.gui.frame.IcyFrameEvent;
+import icy.gui.frame.progress.AnnounceFrame;
 import icy.gui.frame.progress.ToolTipFrame;
 import icy.gui.main.MainAdapter;
 import icy.gui.main.MainEvent;
 import icy.gui.main.MainFrame;
 import icy.gui.viewer.Viewer;
-import icy.image.lut.LUTBand;
+import icy.image.lut.LUT.LUTChannel;
 import icy.main.Icy;
 import icy.network.NetworkUtil;
 import icy.preferences.IcyPreferences;
@@ -113,6 +114,7 @@ import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.JTableEv
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.SliderEditor;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.SliderRenderer;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.MicroscopePainterPreferences;
+import plugins.tprovoost.scriptenginehandler.ScriptFunctionCompletion.BindingFunction;
 
 /**
  * Main frame for Micro Manager Plugin (Singleton pattern)
@@ -218,6 +220,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     private static final int SHORTCUTKEY_MASK = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
     private static final String PREFS_FB_GROUP = "filterBlock";
     private static final String PREFS_OT_GROUP = "objectiveTurret";
+    protected static final String PREFS_OPEN_LAST = "lastopened";
 
     // CONFIG PART
     /** Container for configuration. */
@@ -249,7 +252,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     private MainAdapter adapter;
 
     /**
-     * Singleton pattern : private constructor Use getInstance() instead.
+     * Singleton pattern : private constructor Use
+     * {@link MMMainFrame#getInstance()} instead.
      */
     private MMMainFrame() {
 	super(NODE_NAME, false, true, false, true);
@@ -277,7 +281,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	_progressFrame.setResizable(false);
 	_progressFrame.add(_progressBar);
 	_progressFrame.addToMainDesktopPane();
-	loadConfig();
+	loadConfig(true);
 	if (_sysConfigFile == "") {
 	    return;
 	}
@@ -819,7 +823,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	Sequence s = Icy.getMainInterface().getFocusedSequence();
 	if (s != null && s instanceof MicroscopeSequence && !s.getDataType_().isFloat()) {
 	    for (Viewer v : s.getViewers()) {
-		for (LUTBand lutband : v.getLut().getLutBands()) {
+		for (LUTChannel lutband : v.getLut().getLutChannels()) {
 		    if (_cbAbsoluteHisto.isSelected()) {
 			s.setAutoUpdateChannelBounds(false);
 			double maxvalue = Math.pow(2, _comboBitDepth.getSelectedIndex() + 8);
@@ -837,8 +841,11 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
      * Loads configuration using a JFileChooser Shows a Dialog if a
      * configuration already exists.
      */
-    private void loadConfig() {
+    private void loadConfig(final boolean firstStart) {
 	_isConfigLoaded = false;
+	if (firstStart) {
+	    _sysConfigFile = _root.get(PREFS_OPEN_LAST, "");
+	}
 	if (mCore != null) {
 	    if (!ConfirmDialog.confirm("Are you sure ", "Do you want to load another configuration ?")) {
 		return;
@@ -866,10 +873,12 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 		e.printStackTrace();
 	    }
 	}
-	LoadFrame loadingFrame = new LoadFrame();
-	int returnVal = loadingFrame.showDialog();
-	if (returnVal == 0)
-	    _sysConfigFile = loadingFrame.getPath();
+	if (firstStart && _sysConfigFile.contentEquals("") || !firstStart) {
+	    LoadFrame loadingFrame = new LoadFrame();
+	    int returnVal = loadingFrame.showDialog();
+	    if (returnVal == 0)
+		_sysConfigFile = loadingFrame.getPath();
+	}
 	setVisible(false);
 	_progressFrame.center();
 	_progressFrame.setVisible(true);
@@ -891,6 +900,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 		    }
 		} else {
 		    _isConfigLoaded = true;
+		    if (!firstStart)
+			_root.put(PREFS_OPEN_LAST, _sysConfigFile);
 		    _prefs = _root.node(new File(_sysConfigFile).getName());
 		    // System.out.println("Save file: " +
 		    // _prefs.absolutePath());
@@ -910,6 +921,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 		}
 	    }
 	});
+    }
+
+    private void loadConfig() {
+	loadConfig(false);
     }
 
     /**
@@ -1170,6 +1185,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
     @Override
     public void onClosed() {
+	super.onClosed();
 	if (mCore != null) {
 	    callback.delete();
 	    String filterBlockGroup = mCore.getCurrentFilterBlockGroup();
@@ -1213,8 +1229,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	    mCore = null;
 	    MicroscopeCore.releaseCore();
 	}
-	dispose();
-	super.onClosed();
+	delete();
     }
 
     @Override
@@ -1227,6 +1242,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
      * 
      * @return instance or new instance of the MMMainFrame
      */
+    @BindingFunction("getMMGUI")
     public static MMMainFrame getInstance() {
 	if (!instanced && !instancing)
 	    return new MMMainFrame();
@@ -1236,7 +1252,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
     /**
      * Singleton pattern This function delete the singleton
      */
-    public static void dispose() {
+    public static void delete() {
 	instanced = false;
 	instancing = false;
 	_singleton = null;
@@ -2147,14 +2163,12 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 
     @Override
     public void sleep(long l) throws MMScriptException {
-	// TODO Auto-generated method stub
 
     }
 
     @Override
     public void message(String s) throws MMScriptException {
-	// TODO Auto-generated method stub
-
+	new AnnounceFrame(s);
     }
 
     @Override
