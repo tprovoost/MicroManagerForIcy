@@ -2,10 +2,10 @@
 <classpath>
 	<classpathentry excluding="plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/AutofocusManager.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/AutofocusPropertyEditor.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/ConfigDialog.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/ConfigGroupPad.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/CoreAutofocus.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/GroupEditor.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/PresetEditor.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/PropertyEditor.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/PropertyNameCellRenderer.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/PropertyTableData.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/PropertyUsageCellEditor.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/PropertyUsageCellRenderer.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/PropertyValueCellEditor.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/PropertyValueCellRenderer.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/ShowFlagsPanel.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/StateGroupCellRenderer.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/StatePresetCellEditor.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/StatePresetCellRenderer.java|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigurationWizardWrapper/|plugins/tprovoost/Microscopy/MicroManagerForIcy/ConfigWrapper/MMAcquisitionSequence.java" kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/Icy-App/ij/ij.jar" sourcepath="Icy-Kernel/D:/Stephane/Documents/dev/GIT/imagej"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/mmstudio"/>
 	<classpathentry kind="lib" path="/Icy-App/icy.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/javascripter"/>
+	<classpathentry kind="lib" path="C:/Program Files/Micro-Manager-1.4/plugins/Micro-Manager/MMAcqEngine.jar"/>
+	<classpathentry kind="lib" path="C:/Program Files/Micro-Manager-1.4/plugins/Micro-Manager/MMCoreJ.jar"/>
+	<classpathentry kind="lib" path="C:/Program Files/Micro-Manager-1.4/plugins/Micro-Manager/MMJ_.jar"/>
 	<classpathentry kind="output" path="bin"/>
 	<referencedentry kind="lib" path="/Icy-App/lib/MMJ_.jar" sourcepath="/mmstudio"/>
 </classpath>
