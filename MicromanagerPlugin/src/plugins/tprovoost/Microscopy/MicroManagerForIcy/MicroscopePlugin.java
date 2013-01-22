@@ -12,16 +12,15 @@ import org.micromanager.utils.StateItem;
  * plugin will automatically wait for the Micro-Manager For Icy to be running.<br/>
  * <p>
  * <b>Example: </b></br> start() { <br/>
- * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;System.out.println(core.getAPIVersionInfo
- * ());<br/>
+ * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;System.out.println(core.getAPIVersionInfo ());<br/>
  * }
  * </p>
  * 
  * @author Thomas Provoost
  * @see #start()
  */
-public abstract class MicroscopePlugin extends PluginActionable {
-
+public abstract class MicroscopePlugin extends PluginActionable
+{
     /**
      * This is a reference to the MMMainFrame gui.
      */
@@ -35,39 +34,46 @@ public abstract class MicroscopePlugin extends PluginActionable {
     /**
      * Constructor. Only get the instance of the main interface.
      */
-    protected MicroscopePlugin() {
-	mainGui = MMMainFrame.getInstance();
+    protected MicroscopePlugin()
+    {
+        mainGui = MMMainFrame.getInstance();
     }
 
     @Override
-    public void run() {
-	if (!MMMainFrame.isInstancing() && !MMMainFrame.instanced())
-	    return;
+    public void run()
+    {
+        if (!MMMainFrame.isInstancing() && !MMMainFrame.instanced())
+            return;
 
-	// This uses a thread in order to wait for MicroManagerForIcy to be
-	// ready.
-	ThreadUtil.bgRun(new Runnable() {
-	    @Override
-	    public void run() {
-		// waiting until instanced
-		while (!MMMainFrame.instanced()) {
-		    if (!MMMainFrame.isInstancing())
-			return;
-		    ThreadUtil.sleep(10);
-		}
-		ThreadUtil.invokeLater(new Runnable() {
-		    @Override
-		    public void run() {
-			// if the GUI was loading, it is null.
-			// we have to get it again.
-			if (mainGui == null)
-			    mainGui = MMMainFrame.getInstance();
-			mCore = MicroscopeCore.getCore();
-			start();
-		    }
-		});
-	    }
-	});
+        // This uses a thread in order to wait for MicroManagerForIcy to be
+        // ready.
+        ThreadUtil.bgRun(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                // waiting until instanced
+                while (!MMMainFrame.instanced())
+                {
+                    if (!MMMainFrame.isInstancing())
+                        return;
+                    ThreadUtil.sleep(10);
+                }
+                ThreadUtil.invokeLater(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        // if the GUI was loading, it is null.
+                        // we have to get it again.
+                        if (mainGui == null)
+                            mainGui = MMMainFrame.getInstance();
+                        mCore = MicroscopeCore.getCore();
+                        start();
+                    }
+                });
+            }
+        });
     }
 
     /**
@@ -75,8 +81,9 @@ public abstract class MicroscopePlugin extends PluginActionable {
      * current configuration. That way, all other plugins running will be
      * notified.
      */
-    protected void notifyMainGuiConfigAboutToChange() {
-	mainGui.notifyConfigAboutToChange(null);
+    protected void notifyMainGuiConfigAboutToChange()
+    {
+        mainGui.notifyConfigAboutToChange(null);
     }
 
     /**
@@ -84,9 +91,10 @@ public abstract class MicroscopePlugin extends PluginActionable {
      * current configuration. That way, all other plugins running will be
      * notified.
      */
-    protected void notifyMainGuiConfigChanged() {
-	mainGui.notifyConfigChanged(null);
-	mainGui.configChanged();
+    protected void notifyMainGuiConfigChanged()
+    {
+        mainGui.notifyConfigChanged(null);
+        mainGui.configChanged();
     }
 
     /**

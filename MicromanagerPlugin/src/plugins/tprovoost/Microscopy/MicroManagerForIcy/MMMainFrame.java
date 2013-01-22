@@ -1064,7 +1064,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface {
 	panel_buttons.add(Box.createHorizontalGlue());
 
 	JButton btn_link = new JButton();
-	btn_link.setText("Download Micro-Manager 1.4.6");
+	btn_link.setText("Download Micro-Manager 1.4.13");
 	btn_link.setBackground(Color.WHITE);
 	btn_link.addActionListener(new ActionListener() {
 
