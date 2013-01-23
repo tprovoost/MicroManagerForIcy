@@ -11,9 +11,35 @@ import org.micromanager.utils.StateItem;
  * That way, you will have access to the main interface and the core, and your
  * plugin will automatically wait for the Micro-Manager For Icy to be running.<br/>
  * <p>
- * <b>Example: </b></br> start() { <br/>
- * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;System.out.println(core.getAPIVersionInfo ());<br/>
+ * <b>Example: </b>
+ * 
+ * <pre>
+ * {@code public class MyMicroscopePlugin extends MicroscopePlugin {
+ * 
+ *     public void start() {
+ *         // Acquisition of the first image to set up the settings
+ *         MicroscopeImage imgFirst = ImageGetter.snapImage(MicroscopeCore.getCore());
+ * 
+ *         // Tests if null. In this case, displays a message error and quits the plugin.
+ *         if (imgFirst != null) {
+ *             Icy.addSequence(new Sequence(imgFirst));
+ *         } 
+ *     }
+ *     
+ *     public void notifyConfigAboutToChange(StateItem item) {
+ *        // Do nothing
+ *     }
+ * 
+ *     public void notifyConfigChanged(StateItem item) throws Exception {
+ *         // Do nothing
+ *     }
+ * 
+ *     public void MainGUIClosed() {
+ *         // Do nothing
+ *     }
  * }
+ * </pre>
+ * 
  * </p>
  * 
  * @author Thomas Provoost

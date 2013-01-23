@@ -28,6 +28,16 @@ import mmcorej.StrVector;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.MathTools;
 import plugins.tprovoost.scriptenginehandler.ScriptFunctionCompletion.BindingFunction;
 
+/**
+ * This class represents the interface between the software and the hardware. It is a singleton,
+ * meaning you have to use {@link MicroscopeCore#getCore()} to use it.</br><br/>
+ * <b>Be careful</b>, the
+ * core will be initialized only if {@link MMMainFrame#getInstance()} was called or if you
+ * initialize it yourself.
+ * 
+ * @author Thomas Provoost
+ * @see MMMainFrame#getInstance()
+ */
 public class MicroscopeCore extends CMMCore
 {
 
