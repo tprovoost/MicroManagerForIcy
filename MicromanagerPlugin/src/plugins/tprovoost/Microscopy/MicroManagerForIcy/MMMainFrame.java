@@ -987,66 +987,75 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
                 e.printStackTrace();
             }
         }
-        if (firstStart && _sysConfigFile.contentEquals("") || !firstStart)
-        {
-            LoadFrame loadingFrame = new LoadFrame();
-            int returnVal = loadingFrame.showDialog();
-            if (returnVal == 0)
-                _sysConfigFile = loadingFrame.getPath();
-        }
-        setVisible(false);
-        _progressFrame.center();
-        _progressFrame.setVisible(true);
-        _progressFrame.requestFocus();
-        ThreadUtil.bgRun(new Runnable()
+        ThreadUtil.invokeLater(new Runnable()
         {
 
             @Override
             public void run()
             {
-                loadCMMCore(_sysConfigFile);
-                _progressFrame.setVisible(false);
-                if (mCore == null)
+                if (firstStart && _sysConfigFile.contentEquals("") || !firstStart)
                 {
-                    if (ConfirmDialog.confirm("Error while launching", "Do you want to load another configuration ?"))
-                    {
-                        ThreadUtil.invokeLater(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                loadConfig();
-                            }
-                        });
-                    }
+                    LoadFrame loadingFrame = new LoadFrame();
+                    int returnVal = loadingFrame.showDialog();
+                    if (returnVal == 0)
+                        _sysConfigFile = loadingFrame.getPath();
                 }
-                else
+                setVisible(false);
+                _progressFrame.center();
+                _progressFrame.setVisible(true);
+                _progressFrame.requestFocus();
+                ThreadUtil.bgRun(new Runnable()
                 {
-                    _isConfigLoaded = true;
-                    if (!firstStart)
-                        _root.put(PREFS_OPEN_LAST, _sysConfigFile);
-                    _prefs = _root.node(new File(_sysConfigFile).getName());
-                    // System.out.println("Save file: " +
-                    // _prefs.absolutePath());
-                    if (_groupButtonsPanel != null)
-                        initializeGUI();
-                    setVisible(true);
-                    if (!_list_plugin.isEmpty())
+
+                    @Override
+                    public void run()
                     {
-                        for (MicroscopePlugin p : _list_plugin)
+                        loadCMMCore(_sysConfigFile);
+                        _progressFrame.setVisible(false);
+                        if (mCore == null)
                         {
-                            try
+                            if (ConfirmDialog.confirm("Error while launching",
+                                    "Do you want to load another configuration ?"))
                             {
-                                p.notifyConfigChanged(null);
-                            }
-                            catch (Exception e)
-                            {
-                                e.printStackTrace();
+                                ThreadUtil.invokeLater(new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        loadConfig();
+                                    }
+                                });
                             }
                         }
+                        else
+                        {
+                            _isConfigLoaded = true;
+                            if (!firstStart)
+                                _root.put(PREFS_OPEN_LAST, _sysConfigFile);
+                            _prefs = _root.node(new File(_sysConfigFile).getName());
+                            // System.out.println("Save file: " +
+                            // _prefs.absolutePath());
+                            if (_groupButtonsPanel != null)
+                                initializeGUI();
+                            setVisible(true);
+                            if (!_list_plugin.isEmpty())
+                            {
+                                for (MicroscopePlugin p : _list_plugin)
+                                {
+                                    try
+                                    {
+                                        p.notifyConfigChanged(null);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                            requestFocus();
+                        }
                     }
-                    requestFocus();
-                }
+                });
             }
         });
     }

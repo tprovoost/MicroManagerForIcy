@@ -417,7 +417,6 @@ public class MicroscopeCore extends CMMCore
 
     private class ObjectivesDialog extends JDialog implements KeyListener
     {
-
         /** */
         private static final long serialVersionUID = 1L;
         HashMap<String, Double> result = new HashMap<String, Double>();
