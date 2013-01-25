@@ -1030,7 +1030,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
                         else
                         {
                             _isConfigLoaded = true;
-                            if (!firstStart)
+                            if (firstStart)
                                 _root.put(PREFS_OPEN_LAST, _sysConfigFile);
                             _prefs = _root.node(new File(_sysConfigFile).getName());
                             // System.out.println("Save file: " +
@@ -1995,7 +1995,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      */
     public void notifyConfigAboutToChange(StateItem item)
     {
-        if (!instanced)
+        if (!instanced || instancing)
             return;
         if (!_isConfigLoaded)
             return;
@@ -2033,7 +2033,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
      */
     public void notifyConfigChanged(final StateItem item)
     {
-        if (!instanced)
+        if (!instanced || instancing)
             return;
         if (!_isConfigLoaded)
             return;
@@ -3232,26 +3232,89 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
         @Override
         public void onPropertyChanged(String s, String s1, String s2)
         {
-            // handle property changed
+            ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
+            for (MicroscopePlugin p : _list_plugin)
+            {
+                try
+                {
+                    p.onPropertyChanged(s, s1, s2);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    todeletelist.add(p);
+                }
+            }
+            for (MicroscopePlugin p : todeletelist)
+            {
+                _list_plugin.remove(p);
+            }
         }
 
         @Override
         public void onPixelSizeChanged(double d)
         {
-            // handle pixel size changed
+            ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
+            for (MicroscopePlugin p : _list_plugin)
+            {
+                try
+                {
+                    p.onPixelSizeChanged(d);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    todeletelist.add(p);
+                }
+            }
+            for (MicroscopePlugin p : todeletelist)
+            {
+                _list_plugin.remove(p);
+            }
         }
 
         @Override
         public void onConfigGroupChanged(String s, String s1)
         {
-            // handle config group changed
-            System.out.println(s + " / " + s1);
+            ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
+            for (MicroscopePlugin p : _list_plugin)
+            {
+                try
+                {
+                    p.onConfigGroupChanged(s, s1);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    todeletelist.add(p);
+                }
+            }
+            for (MicroscopePlugin p : todeletelist)
+            {
+                _list_plugin.remove(p);
+            }
         }
 
         @Override
         public void onPropertiesChanged()
         {
-            // handle properties changed
+            ArrayList<MicroscopePlugin> todeletelist = new ArrayList<MicroscopePlugin>();
+            for (MicroscopePlugin p : _list_plugin)
+            {
+                try
+                {
+                    p.onPropertiesChanged();
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    todeletelist.add(p);
+                }
+            }
+            for (MicroscopePlugin p : todeletelist)
+            {
+                _list_plugin.remove(p);
+            }
         }
 
         @Override
@@ -3277,4 +3340,5 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
             StageMover.onXYStagePositionChangedRelative(s, d, d1);
         }
     }
+
 }

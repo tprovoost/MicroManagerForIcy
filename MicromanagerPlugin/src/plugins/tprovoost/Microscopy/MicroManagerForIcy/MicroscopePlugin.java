@@ -5,6 +5,8 @@ import icy.system.thread.ThreadUtil;
 
 import org.micromanager.utils.StateItem;
 
+import plugins.tprovoost.Microscopy.MicroManagerForIcy.MMMainFrame.EventCallBackManager;
+
 /**
  * This is the class to inherit in order to create a Microscope Plugin. Instead
  * of implementing compute(), you will have to implement the start() method.
@@ -135,7 +137,9 @@ public abstract class MicroscopePlugin extends PluginActionable
      * @param item
      * @throws Exception
      */
-    public abstract void notifyConfigAboutToChange(StateItem item) throws Exception;
+    public void notifyConfigAboutToChange(StateItem item) throws Exception
+    {
+    }
 
     /**
      * Called after configuration is changed.
@@ -144,10 +148,51 @@ public abstract class MicroscopePlugin extends PluginActionable
      * @throws Exception
      * @see notifyConfigAboutToChange()
      */
-    public abstract void notifyConfigChanged(StateItem item) throws Exception;
+    public void notifyConfigChanged(StateItem item) throws Exception
+    {
+    }
 
     /**
      * Called when main gui is closed
      */
-    public abstract void MainGUIClosed();
+    public void MainGUIClosed()
+    {
+    }
+
+    /**
+     * Dispatched from {@link EventCallBackManager#onPropertyChanged(String, String, String)}.
+     * 
+     * @param s
+     * @param s1
+     * @param s2
+     */
+    public void onPropertyChanged(String s, String s1, String s2)
+    {
+    }
+
+    /**
+     * Dispatched from {@link EventCallBackManager#onPixelSizeChanged(double)}.
+     * 
+     * @param d
+     */
+    public void onPixelSizeChanged(double d)
+    {
+    }
+
+    /**
+     * Dispatched from {@link EventCallBackManager#onConfigGroupChanged(String, String)}.
+     * 
+     * @param s
+     * @param s1
+     */
+    public void onConfigGroupChanged(String s, String s1)
+    {
+    }
+
+    /**
+     * Dispatched from {@link EventCallBackManager#onPropertiesChanged()}.
+     */
+    public void onPropertiesChanged()
+    {
+    }
 }
