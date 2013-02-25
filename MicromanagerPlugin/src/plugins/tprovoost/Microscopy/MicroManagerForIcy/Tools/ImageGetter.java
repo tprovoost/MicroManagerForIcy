@@ -5,7 +5,7 @@ import icy.type.DataType;
 import icy.type.collection.array.Array1DUtil;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.MicroscopeCore;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.MicroscopeImage;
-import plugins.tprovoost.scriptenginehandler.ScriptFunctionCompletion.BindingFunction;
+import plugins.tprovoost.scripteditor.completion.types.ScriptFunctionCompletion.BindingFunction;
 
 public class ImageGetter
 {

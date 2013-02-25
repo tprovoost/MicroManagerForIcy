@@ -136,7 +136,9 @@ public abstract class MicroscopePlugin extends PluginActionable
      * 
      * @param item
      * @throws Exception
+     * @deprecated This method should no longer be used.
      */
+    @Deprecated
     public void notifyConfigAboutToChange(StateItem item) throws Exception
     {
     }
@@ -147,7 +149,11 @@ public abstract class MicroscopePlugin extends PluginActionable
      * @param item
      * @throws Exception
      * @see notifyConfigAboutToChange()
+     * @deprecated This method should no longer send signals, please use
+     *             {@link #onConfigGroupChanged(String, String)} or
+     *             {@link #onPropertyChanged(String, String, String)}
      */
+    @Deprecated
     public void notifyConfigChanged(StateItem item) throws Exception
     {
     }

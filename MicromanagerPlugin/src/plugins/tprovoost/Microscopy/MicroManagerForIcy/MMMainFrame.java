@@ -114,7 +114,7 @@ import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.JTableEv
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.SliderEditor;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.JTablePack.SliderRenderer;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.painters.MicroscopePainterPreferences;
-import plugins.tprovoost.scriptenginehandler.ScriptFunctionCompletion.BindingFunction;
+import plugins.tprovoost.scripteditor.completion.types.ScriptFunctionCompletion.BindingFunction;
 
 /**
  * Main frame for Micro Manager Plugin (Singleton pattern). Please use the method
@@ -163,7 +163,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /** List of all progresses bars added to the main plugin. */
     private ArrayList<RunningProgress> _list_progress = new ArrayList<MMMainFrame.RunningProgress>();
     /** Used to show a bar when a continuous acquisition is currently running. */
-    private RunningProgress continuousProgress = new RunningProgress();
+    private RunningProgress continuousProgress;
     /**
      * This boolean tells if the configuration is loaded. isConfigLoaded is true
      * when a configuration file is being loaded. It is false when over.
@@ -263,7 +263,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     private MMMainFrame()
     {
         super(NODE_NAME, false, true, false, true);
-
+        instancing = true;
         // --------------
         // INITIALIZATION
         // --------------
@@ -275,664 +275,690 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
         // --------------
         // PROGRESS FRAME
         // --------------
-        _progressFrame = new IcyFrame("", false, false, false, false);
-        _progressBar = new JProgressBar();
-        _progressBar.setString("Please wait while loading...");
-        _progressBar.setStringPainted(true);
-        _progressBar.setIndeterminate(true);
-        _progressBar.setMinimum(0);
-        _progressBar.setMaximum(1000);
-        _progressBar.setBounds(50, 50, 100, 30);
-        _progressFrame.setSize(300, 100);
-        _progressFrame.setResizable(false);
-        _progressFrame.add(_progressBar);
-        _progressFrame.addToMainDesktopPane();
-        loadConfig(true);
-        if (_sysConfigFile == "")
+        ThreadUtil.invokeLater(new Runnable()
         {
-            return;
-        }
-        instancing = true;
-        ThreadUtil.bgRun(new Runnable()
-        {
-
             @Override
             public void run()
             {
-                while (!_isConfigLoaded)
+                _progressFrame = new IcyFrame("", false, false, false, false);
+                _progressBar = new JProgressBar();
+                _progressBar.setString("Please wait while loading...");
+                _progressBar.setStringPainted(true);
+                _progressBar.setIndeterminate(true);
+                _progressBar.setMinimum(0);
+                _progressBar.setMaximum(1000);
+                _progressBar.setBounds(50, 50, 100, 30);
+                _progressFrame.setSize(300, 100);
+                _progressFrame.setResizable(false);
+                _progressFrame.add(_progressBar);
+                _progressFrame.addToMainDesktopPane();
+                loadConfig(true);
+                if (_sysConfigFile == "")
                 {
-                    try
-                    {
-                        Thread.sleep(10);
-                    }
-                    catch (InterruptedException e)
-                    {
-                    }
+                    instancing = false;
+                    return;
                 }
-                ThreadUtil.invokeLater(new Runnable()
+                ThreadUtil.bgRun(new Runnable()
                 {
 
                     @Override
                     public void run()
                     {
-                        // --------------------
-                        // START INITIALIZATION
-                        // --------------------
-                        if (_progressBar != null)
-                            getContentPane().remove(_progressBar);
-                        if (mCore == null)
+                        while (!_isConfigLoaded)
                         {
-                            close();
-                            return;
+                            try
+                            {
+                                Thread.sleep(10);
+                            }
+                            catch (InterruptedException e)
+                            {
+                            }
                         }
-                        _afMgr = new AutofocusManager(MMMainFrame.this);
-                        PositionList posList = new PositionList();
-
-                        _camera_label = MMCoreJ.getG_Keyword_CameraName();
-                        if (_camera_label == null)
-                            _camera_label = "";
-                        try
-                        {
-                            setPositionList(posList);
-                        }
-                        catch (MMScriptException e1)
-                        {
-                            e1.printStackTrace();
-                        }
-                        posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
-
-                        callback = new EventCallBackManager();
-                        mCore.registerCallback(callback);
-
-                        posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
-
-                        setSystemMenuCallback(new MenuCallback()
+                        ThreadUtil.invokeLater(new Runnable()
                         {
 
                             @Override
-                            public JMenu getMenu()
+                            public void run()
                             {
-                                JMenu toReturn = MMMainFrame.this.getDefaultSystemMenu();
-                                JMenuItem hconfig = new JMenuItem("Configuration Wizard");
-                                hconfig.setIcon(new IcyIcon("cog", MENU_ICON_SIZE));
-                                // hconfig.addActionListener(new
-                                // ActionListener() {
-                                //
-                                // @Override
-                                // public void actionPerformed(ActionEvent e) {
-                                // MessageDialog.showDialog("Not yet implementend",
-                                // "This feature is not yet available. "
-                                // +
-                                // "Please use Micro-Manager's Hardware Configuration Wizard instead.");
-                                // }
-                                // });
+                                // --------------------
+                                // START INITIALIZATION
+                                // --------------------
+                                if (_progressBar != null)
+                                    getContentPane().remove(_progressBar);
+                                continuousProgress = new RunningProgress();
+                                if (mCore == null)
+                                {
+                                    close();
+                                    return;
+                                }
+                                _afMgr = new AutofocusManager(MMMainFrame.this);
+                                PositionList posList = new PositionList();
 
-                                hconfig.addActionListener(new ActionListener()
+                                _camera_label = MMCoreJ.getG_Keyword_CameraName();
+                                if (_camera_label == null)
+                                    _camera_label = "";
+                                try
+                                {
+                                    setPositionList(posList);
+                                }
+                                catch (MMScriptException e1)
+                                {
+                                    e1.printStackTrace();
+                                }
+                                posListDlg_ = new PositionListDlg(mCore, MMMainFrame.this, _posList, null);
+
+                                callback = new EventCallBackManager();
+                                mCore.registerCallback(callback);
+
+                                posListDlg_.setModalityType(ModalityType.APPLICATION_MODAL);
+
+                                setSystemMenuCallback(new MenuCallback()
                                 {
 
                                     @Override
-                                    public void actionPerformed(ActionEvent e)
+                                    public JMenu getMenu()
                                     {
-                                        if (!_pluginListEmpty
-                                                && !ConfirmDialog
-                                                        .confirm(
-                                                                "Are you sure ?",
-                                                                "<html>Loading the Configuration Wizard will unload all the devices and pause all running acquisitions.</br> Are you sure you want to continue ?</html>"))
-                                            return;
-                                        notifyConfigAboutToChange(null);
-                                        try
-                                        {
-                                            mCore.unloadAllDevices();
-                                        }
-                                        catch (Exception e1)
-                                        {
-                                            e1.printStackTrace();
-                                        }
-                                        String previous_config = _sysConfigFile;
-                                        ConfiguratorDlg configurator = new ConfiguratorDlg(mCore, _sysConfigFile);
-                                        configurator.setVisible(true);
-                                        String res = configurator.getFileName();
-                                        if (_sysConfigFile == "" || _sysConfigFile == res || res == "")
-                                        {
-                                            _sysConfigFile = previous_config;
-                                            loadConfig();
-                                        }
-                                        refreshGUI();
-                                        notifyConfigChanged(null);
-                                    }
-                                });
+                                        JMenu toReturn = MMMainFrame.this.getDefaultSystemMenu();
+                                        JMenuItem hconfig = new JMenuItem("Configuration Wizard");
+                                        hconfig.setIcon(new IcyIcon("cog", MENU_ICON_SIZE));
+                                        // hconfig.addActionListener(new
+                                        // ActionListener() {
+                                        //
+                                        // @Override
+                                        // public void actionPerformed(ActionEvent e) {
+                                        // MessageDialog.showDialog("Not yet implementend",
+                                        // "This feature is not yet available. "
+                                        // +
+                                        // "Please use Micro-Manager's Hardware Configuration Wizard instead.");
+                                        // }
+                                        // });
 
-                                JMenuItem menuPxSizeConfigItem = new JMenuItem("Pixel Size Config");
-                                menuPxSizeConfigItem.setIcon(new IcyIcon("link", MENU_ICON_SIZE));
-                                menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G,
-                                        InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
-                                menuPxSizeConfigItem.addActionListener(new ActionListener()
-                                {
-
-                                    @Override
-                                    public void actionPerformed(ActionEvent e)
-                                    {
-                                        CalibrationListDlg dlg = new CalibrationListDlg(mCore);
-                                        dlg.setDefaultCloseOperation(2);
-                                        dlg.setParentGUI(MMMainFrame.this);
-                                        dlg.setVisible(true);
-                                        dlg.addWindowListener(new WindowAdapter()
+                                        hconfig.addActionListener(new ActionListener()
                                         {
+
                                             @Override
-                                            public void windowClosed(WindowEvent e)
+                                            public void actionPerformed(ActionEvent e)
                                             {
-                                                super.windowClosed(e);
+                                                if (!_pluginListEmpty
+                                                        && !ConfirmDialog
+                                                                .confirm(
+                                                                        "Are you sure ?",
+                                                                        "<html>Loading the Configuration Wizard will unload all the devices and pause all running acquisitions.</br> Are you sure you want to continue ?</html>"))
+                                                    return;
+                                                notifyConfigAboutToChange(null);
+                                                try
+                                                {
+                                                    mCore.unloadAllDevices();
+                                                }
+                                                catch (Exception e1)
+                                                {
+                                                    e1.printStackTrace();
+                                                }
+                                                String previous_config = _sysConfigFile;
+                                                ConfiguratorDlg configurator = new ConfiguratorDlg(mCore,
+                                                        _sysConfigFile);
+                                                configurator.setVisible(true);
+                                                String res = configurator.getFileName();
+                                                if (_sysConfigFile == "" || _sysConfigFile == res || res == "")
+                                                {
+                                                    _sysConfigFile = previous_config;
+                                                    loadConfig();
+                                                }
+                                                refreshGUI();
                                                 notifyConfigChanged(null);
                                             }
                                         });
-                                        notifyConfigAboutToChange(null);
-                                    }
-                                });
-
-                                JMenuItem loadConfigItem = new JMenuItem("Load Configuration");
-                                loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
-                                        InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
-                                loadConfigItem.setIcon(new IcyIcon("folder_open", MENU_ICON_SIZE));
-                                loadConfigItem.addActionListener(new ActionListener()
-                                {
-
-                                    @Override
-                                    public void actionPerformed(ActionEvent e)
-                                    {
-                                        loadConfig();
-                                        initializeGUI();
-                                        refreshGUI();
-                                    }
-                                });
-                                JMenuItem saveConfigItem = new JMenuItem("Save Configuration");
-                                saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
-                                        InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
-                                saveConfigItem.setIcon(new IcyIcon("save", MENU_ICON_SIZE));
-                                saveConfigItem.addActionListener(new ActionListener()
-                                {
-
-                                    @Override
-                                    public void actionPerformed(ActionEvent e)
-                                    {
-                                        saveConfig();
-                                    }
-                                });
-                                JMenuItem advancedConfigItem = new JMenuItem("Advanced Configuration");
-                                advancedConfigItem.setIcon(new IcyIcon("wrench_plus", MENU_ICON_SIZE));
-                                advancedConfigItem.addActionListener(new ActionListener()
-                                {
-
-                                    /**
-									 */
-                                    @Override
-                                    public void actionPerformed(ActionEvent e)
-                                    {
-                                        new ToolTipFrame(
-                                                "<html><h3>About Advanced Config</h3><p>Advanced Configuration is a tool "
-                                                        + "in which you fill some data <br/>about your configuration that some "
-                                                        + "plugins may need to access to.<br/> Exemple: the real values of the magnification"
-                                                        + "of your objectives.</p></html>", "MM4IcyAdvancedConfig");
-                                        if (advancedDlg == null)
-                                            advancedDlg = new AdvancedConfigurationDialog();
-                                        advancedDlg.setVisible(!advancedDlg.isVisible());
-                                        advancedDlg.setLocationRelativeTo(mainFrame);
-                                    }
-                                });
-                                JMenuItem loadPresetConfigItem = new JMenuItem("Load Configuration Presets");
-                                loadPresetConfigItem.setIcon(new IcyIcon("doc_import", MENU_ICON_SIZE));
-                                loadPresetConfigItem.addActionListener(new ActionListener()
-                                {
-
-                                    @Override
-                                    public void actionPerformed(ActionEvent e)
-                                    {
-                                        notifyConfigAboutToChange(null);
-                                        loadPresets();
-                                        notifyConfigChanged(null);
-                                    }
-                                });
-                                JMenuItem savePresetConfigItem = new JMenuItem("Save Configuration Presets");
-                                savePresetConfigItem.setIcon(new IcyIcon("doc_export", MENU_ICON_SIZE));
-                                savePresetConfigItem.addActionListener(new ActionListener()
-                                {
-
-                                    @Override
-                                    public void actionPerformed(ActionEvent e)
-                                    {
-                                        savePresets();
-                                    }
-                                });
-                                JMenuItem aboutItem = new JMenuItem("About");
-                                aboutItem.setIcon(new IcyIcon("info", MENU_ICON_SIZE));
-                                aboutItem.addActionListener(new ActionListener()
-                                {
-
-                                    @Override
-                                    public void actionPerformed(ActionEvent e)
-                                    {
-                                        final JDialog dialog = new JDialog(mainFrame, "About");
-                                        JPanel panel_container = new JPanel();
-                                        panel_container.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-                                        JPanel center = new JPanel(new BorderLayout());
-                                        final JLabel value = new JLabel(
-                                                "<html><body>"
-                                                        + "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
-                                                        + "<br/>Copyright 2011, Institut Pasteur</p><br/>"
-                                                        + "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
-                                                        + "<i>This software is distributed free of charge in the hope that it will be<br/>"
-                                                        + "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
-                                                        + "warranty of merchantability or fitness for a particular purpose. In no<br/>"
-                                                        + "event shall the copyright owner or contributors be liable for any direct,<br/>"
-                                                        + "indirect, incidental spacial, examplary, or consequential damages.<br/>"
-                                                        + "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>"
-                                                        + "2010. All rights reserved.</i>" + "</p>" + "</body></html>");
-                                        JLabel link = new JLabel(
-                                                "<html><a href=\"\">For more information, please follow this link.</a></html>");
-                                        link.addMouseListener(new MouseAdapter()
-                                        {
-                                            @Override
-                                            public void mousePressed(MouseEvent mouseevent)
-                                            {
-                                                NetworkUtil
-                                                        .openBrowser("http://valelab.ucsf.edu/~MM/MMwiki/index.php/Micro-Manager");
-                                            }
-                                        });
-                                        value.setSize(new Dimension(50, 18));
-                                        value.setAlignmentX(SwingConstants.HORIZONTAL);
-                                        value.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
-
-                                        center.add(value, BorderLayout.CENTER);
-                                        center.add(link, BorderLayout.SOUTH);
-
-                                        JPanel panel_south = new JPanel();
-                                        panel_south.setLayout(new BoxLayout(panel_south, BoxLayout.X_AXIS));
-                                        JButton btn = new JButton("OK");
-                                        btn.addActionListener(new ActionListener()
+                                        JMenuItem menuPxSizeConfigItem = new JMenuItem("Pixel Size Config");
+                                        menuPxSizeConfigItem.setIcon(new IcyIcon("link", MENU_ICON_SIZE));
+                                        menuPxSizeConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G,
+                                                InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+                                        menuPxSizeConfigItem.addActionListener(new ActionListener()
                                         {
 
                                             @Override
-                                            public void actionPerformed(ActionEvent actionevent)
+                                            public void actionPerformed(ActionEvent e)
                                             {
-                                                dialog.dispose();
+                                                CalibrationListDlg dlg = new CalibrationListDlg(mCore);
+                                                dlg.setDefaultCloseOperation(2);
+                                                dlg.setParentGUI(MMMainFrame.this);
+                                                dlg.setVisible(true);
+                                                dlg.addWindowListener(new WindowAdapter()
+                                                {
+                                                    @Override
+                                                    public void windowClosed(WindowEvent e)
+                                                    {
+                                                        super.windowClosed(e);
+                                                        notifyConfigChanged(null);
+                                                    }
+                                                });
+                                                notifyConfigAboutToChange(null);
                                             }
                                         });
-                                        panel_south.add(Box.createHorizontalGlue());
-                                        panel_south.add(btn);
-                                        panel_south.add(Box.createHorizontalGlue());
 
-                                        dialog.setLayout(new BorderLayout());
-                                        panel_container.setLayout(new BorderLayout());
-                                        panel_container.add(center, BorderLayout.CENTER);
-                                        panel_container.add(panel_south, BorderLayout.SOUTH);
-                                        dialog.add(panel_container, BorderLayout.CENTER);
-                                        dialog.setResizable(false);
-                                        dialog.setVisible(true);
-                                        dialog.pack();
-                                        dialog.setLocation((int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth()
-                                                / 2, (int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight() / 2);
-                                        dialog.setLocationRelativeTo(mainFrame);
+                                        JMenuItem loadConfigItem = new JMenuItem("Load Configuration");
+                                        loadConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
+                                                InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+                                        loadConfigItem.setIcon(new IcyIcon("folder_open", MENU_ICON_SIZE));
+                                        loadConfigItem.addActionListener(new ActionListener()
+                                        {
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e)
+                                            {
+                                                loadConfig();
+                                                initializeGUI();
+                                                refreshGUI();
+                                            }
+                                        });
+                                        JMenuItem saveConfigItem = new JMenuItem("Save Configuration");
+                                        saveConfigItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+                                                InputEvent.SHIFT_DOWN_MASK | SHORTCUTKEY_MASK));
+                                        saveConfigItem.setIcon(new IcyIcon("save", MENU_ICON_SIZE));
+                                        saveConfigItem.addActionListener(new ActionListener()
+                                        {
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e)
+                                            {
+                                                saveConfig();
+                                            }
+                                        });
+                                        JMenuItem advancedConfigItem = new JMenuItem("Advanced Configuration");
+                                        advancedConfigItem.setIcon(new IcyIcon("wrench_plus", MENU_ICON_SIZE));
+                                        advancedConfigItem.addActionListener(new ActionListener()
+                                        {
+
+                                            /**
+                                             */
+                                            @Override
+                                            public void actionPerformed(ActionEvent e)
+                                            {
+                                                new ToolTipFrame(
+                                                        "<html><h3>About Advanced Config</h3><p>Advanced Configuration is a tool "
+                                                                + "in which you fill some data <br/>about your configuration that some "
+                                                                + "plugins may need to access to.<br/> Exemple: the real values of the magnification"
+                                                                + "of your objectives.</p></html>",
+                                                        "MM4IcyAdvancedConfig");
+                                                if (advancedDlg == null)
+                                                    advancedDlg = new AdvancedConfigurationDialog();
+                                                advancedDlg.setVisible(!advancedDlg.isVisible());
+                                                advancedDlg.setLocationRelativeTo(mainFrame);
+                                            }
+                                        });
+                                        JMenuItem loadPresetConfigItem = new JMenuItem("Load Configuration Presets");
+                                        loadPresetConfigItem.setIcon(new IcyIcon("doc_import", MENU_ICON_SIZE));
+                                        loadPresetConfigItem.addActionListener(new ActionListener()
+                                        {
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e)
+                                            {
+                                                notifyConfigAboutToChange(null);
+                                                String filename = xmlFileChooser();
+                                                loadPresets(filename);
+                                                notifyConfigChanged(null);
+                                            }
+                                        });
+                                        JMenuItem savePresetConfigItem = new JMenuItem("Save Configuration Presets");
+                                        savePresetConfigItem.setIcon(new IcyIcon("doc_export", MENU_ICON_SIZE));
+                                        savePresetConfigItem.addActionListener(new ActionListener()
+                                        {
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e)
+                                            {
+                                                String filename = xmlFileChooser();
+                                                savePresets(filename);
+                                            }
+                                        });
+                                        JMenuItem aboutItem = new JMenuItem("About");
+                                        aboutItem.setIcon(new IcyIcon("info", MENU_ICON_SIZE));
+                                        aboutItem.addActionListener(new ActionListener()
+                                        {
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e)
+                                            {
+                                                final JDialog dialog = new JDialog(mainFrame, "About");
+                                                JPanel panel_container = new JPanel();
+                                                panel_container.setBorder(BorderFactory.createEmptyBorder(10, 20, 10,
+                                                        20));
+                                                JPanel center = new JPanel(new BorderLayout());
+                                                final JLabel value = new JLabel(
+                                                        "<html><body>"
+                                                                + "<h2>About</h2><p>Micro-Manager for Icy is being developed by Thomas Provoost."
+                                                                + "<br/>Copyright 2011, Institut Pasteur</p><br/>"
+                                                                + "<p>This plugin is based on Micro-Manager© v1.4.6. which is developed under the following license:<br/>"
+                                                                + "<i>This software is distributed free of charge in the hope that it will be<br/>"
+                                                                + "useful, but WITHOUT ANY WARRANTY; without even the implied<br/>"
+                                                                + "warranty of merchantability or fitness for a particular purpose. In no<br/>"
+                                                                + "event shall the copyright owner or contributors be liable for any direct,<br/>"
+                                                                + "indirect, incidental spacial, examplary, or consequential damages.<br/>"
+                                                                + "Copyright University of California San Francisco, 2007, 2008, 2009,<br/>"
+                                                                + "2010. All rights reserved.</i>" + "</p>"
+                                                                + "</body></html>");
+                                                JLabel link = new JLabel(
+                                                        "<html><a href=\"\">For more information, please follow this link.</a></html>");
+                                                link.addMouseListener(new MouseAdapter()
+                                                {
+                                                    @Override
+                                                    public void mousePressed(MouseEvent mouseevent)
+                                                    {
+                                                        NetworkUtil
+                                                                .openBrowser("http://valelab.ucsf.edu/~MM/MMwiki/index.php/Micro-Manager");
+                                                    }
+                                                });
+                                                value.setSize(new Dimension(50, 18));
+                                                value.setAlignmentX(SwingConstants.HORIZONTAL);
+                                                value.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+                                                center.add(value, BorderLayout.CENTER);
+                                                center.add(link, BorderLayout.SOUTH);
+
+                                                JPanel panel_south = new JPanel();
+                                                panel_south.setLayout(new BoxLayout(panel_south, BoxLayout.X_AXIS));
+                                                JButton btn = new JButton("OK");
+                                                btn.addActionListener(new ActionListener()
+                                                {
+
+                                                    @Override
+                                                    public void actionPerformed(ActionEvent actionevent)
+                                                    {
+                                                        dialog.dispose();
+                                                    }
+                                                });
+                                                panel_south.add(Box.createHorizontalGlue());
+                                                panel_south.add(btn);
+                                                panel_south.add(Box.createHorizontalGlue());
+
+                                                dialog.setLayout(new BorderLayout());
+                                                panel_container.setLayout(new BorderLayout());
+                                                panel_container.add(center, BorderLayout.CENTER);
+                                                panel_container.add(panel_south, BorderLayout.SOUTH);
+                                                dialog.add(panel_container, BorderLayout.CENTER);
+                                                dialog.setResizable(false);
+                                                dialog.setVisible(true);
+                                                dialog.pack();
+                                                dialog.setLocation(
+                                                        (int) mainFrame.getSize().getWidth() / 2 - dialog.getWidth()
+                                                                / 2,
+                                                        (int) mainFrame.getSize().getHeight() / 2 - dialog.getHeight()
+                                                                / 2);
+                                                dialog.setLocationRelativeTo(mainFrame);
+                                            }
+                                        });
+                                        JMenuItem propertyBrowserItem = new JMenuItem("Property Browser");
+                                        propertyBrowserItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA,
+                                                SHORTCUTKEY_MASK));
+                                        propertyBrowserItem.setIcon(new IcyIcon("db", MENU_ICON_SIZE));
+                                        propertyBrowserItem.addActionListener(new ActionListener()
+                                        {
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e)
+                                            {
+                                                editor.setVisible(!editor.isVisible());
+                                            }
+                                        });
+                                        int idx = 0;
+                                        toReturn.insert(hconfig, idx++);
+                                        toReturn.insert(loadConfigItem, idx++);
+                                        toReturn.insert(saveConfigItem, idx++);
+                                        toReturn.insert(advancedConfigItem, idx++);
+                                        toReturn.insertSeparator(idx++);
+                                        toReturn.insert(loadPresetConfigItem, idx++);
+                                        toReturn.insert(savePresetConfigItem, idx++);
+                                        toReturn.insertSeparator(idx++);
+                                        toReturn.insert(propertyBrowserItem, idx++);
+                                        toReturn.insert(menuPxSizeConfigItem, idx++);
+                                        toReturn.insertSeparator(idx++);
+                                        toReturn.insert(aboutItem, idx++);
+                                        return toReturn;
                                     }
                                 });
-                                JMenuItem propertyBrowserItem = new JMenuItem("Property Browser");
-                                propertyBrowserItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA,
-                                        SHORTCUTKEY_MASK));
-                                propertyBrowserItem.setIcon(new IcyIcon("db", MENU_ICON_SIZE));
-                                propertyBrowserItem.addActionListener(new ActionListener()
-                                {
 
-                                    @Override
-                                    public void actionPerformed(ActionEvent e)
-                                    {
-                                        editor.setVisible(!editor.isVisible());
-                                    }
-                                });
-                                int idx = 0;
-                                toReturn.insert(hconfig, idx++);
-                                toReturn.insert(loadConfigItem, idx++);
-                                toReturn.insert(saveConfigItem, idx++);
-                                toReturn.insert(advancedConfigItem, idx++);
-                                toReturn.insertSeparator(idx++);
-                                toReturn.insert(loadPresetConfigItem, idx++);
-                                toReturn.insert(savePresetConfigItem, idx++);
-                                toReturn.insertSeparator(idx++);
-                                toReturn.insert(propertyBrowserItem, idx++);
-                                toReturn.insert(menuPxSizeConfigItem, idx++);
-                                toReturn.insertSeparator(idx++);
-                                toReturn.insert(aboutItem, idx++);
-                                return toReturn;
-                            }
-                        });
+                                saveConfigButton_ = new JButton("Save Button");
 
-                        saveConfigButton_ = new JButton("Save Button");
+                                // SETUP
+                                _groupPad = new ConfigGroupPad(MMMainFrame.this);
+                                _groupPad.setFont(new Font("", 0, 10));
+                                _groupPad.setCore(mCore);
+                                _groupPad.setParentGUI(MMMainFrame.this);
+                                _groupButtonsPanel = new ConfigButtonsPanel();
+                                _groupButtonsPanel.setCore(mCore);
+                                _groupButtonsPanel.setGUI(MMMainFrame.this);
+                                _groupButtonsPanel.setConfigPad(_groupPad);
 
-                        // SETUP
-                        _groupPad = new ConfigGroupPad(MMMainFrame.this);
-                        _groupPad.setFont(new Font("", 0, 10));
-                        _groupPad.setCore(mCore);
-                        _groupPad.setParentGUI(MMMainFrame.this);
-                        _groupButtonsPanel = new ConfigButtonsPanel();
-                        _groupButtonsPanel.setCore(mCore);
-                        _groupButtonsPanel.setGUI(MMMainFrame.this);
-                        _groupButtonsPanel.setConfigPad(_groupPad);
+                                // LEFT PART OF INTERFACE
+                                _panelConfig = new JPanel();
+                                _panelConfig.setLayout(new BoxLayout(_panelConfig, BoxLayout.Y_AXIS));
+                                _panelConfig.add(_groupPad, BorderLayout.CENTER);
+                                _panelConfig.add(_groupButtonsPanel, BorderLayout.SOUTH);
+                                _panelConfig.setPreferredSize(new Dimension(300, 300));
 
-                        // LEFT PART OF INTERFACE
-                        _panelConfig = new JPanel();
-                        _panelConfig.setLayout(new BoxLayout(_panelConfig, BoxLayout.Y_AXIS));
-                        _panelConfig.add(_groupPad, BorderLayout.CENTER);
-                        _panelConfig.add(_groupButtonsPanel, BorderLayout.SOUTH);
-                        _panelConfig.setPreferredSize(new Dimension(300, 300));
+                                // MIDDLE PART OF INTERFACE
+                                _panel_cameraSettings = new JPanel();
+                                _panel_cameraSettings.setLayout(new GridLayout(5, 2));
+                                _panel_cameraSettings.setMinimumSize(new Dimension(100, 200));
 
-                        // MIDDLE PART OF INTERFACE
-                        _panel_cameraSettings = new JPanel();
-                        _panel_cameraSettings.setLayout(new GridLayout(5, 2));
-                        _panel_cameraSettings.setMinimumSize(new Dimension(100, 200));
-
-                        _txtExposure = new JTextField();
-                        try
-                        {
-                            mCore.setExposure(90.0D);
-                            _txtExposure.setText(String.valueOf(mCore.getExposure()));
-                        }
-                        catch (Exception e2)
-                        {
-                            _txtExposure.setText("90");
-                        }
-                        _txtExposure.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-                        _txtExposure.addKeyListener(new KeyAdapter()
-                        {
-                            @Override
-                            public void keyPressed(KeyEvent keyevent)
-                            {
-                                if (keyevent.getKeyCode() == KeyEvent.VK_ENTER)
-                                    setExposure();
-                            }
-                        });
-                        _panel_cameraSettings.add(new JLabel("Exposure [ms]: "));
-                        _panel_cameraSettings.add(_txtExposure);
-
-                        _combo_binning = new JComboBox();
-                        _combo_binning.setMaximumRowCount(4);
-                        _combo_binning.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-                        _combo_binning.addActionListener(new ActionListener()
-                        {
-                            public void actionPerformed(ActionEvent e)
-                            {
-                                changeBinning();
-                            }
-                        });
-
-                        _panel_cameraSettings.add(new JLabel("Binning: "));
-                        _panel_cameraSettings.add(_combo_binning);
-
-                        _combo_shutters = new JComboBox();
-                        _combo_shutters.addActionListener(new ActionListener()
-                        {
-                            public void actionPerformed(ActionEvent arg0)
-                            {
+                                _txtExposure = new JTextField();
                                 try
                                 {
-                                    if (_combo_shutters.getSelectedItem() != null)
-                                    {
-                                        mCore.setShutterDevice((String) _combo_shutters.getSelectedItem());
-                                        _prefs.put(PREF_SHUTTER,
-                                                (String) _combo_shutters.getItemAt(_combo_shutters.getSelectedIndex()));
-                                    }
+                                    mCore.setExposure(90.0D);
+                                    _txtExposure.setText(String.valueOf(mCore.getExposure()));
                                 }
-                                catch (Exception e)
+                                catch (Exception e2)
                                 {
-                                    e.printStackTrace();
+                                    _txtExposure.setText("90");
                                 }
-                            }
-                        });
-                        _combo_shutters.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-                        _panel_cameraSettings.add(new JLabel("Shutter : "));
-                        _panel_cameraSettings.add(_combo_shutters);
-
-                        ActionListener action_listener = new ActionListener()
-                        {
-                            @Override
-                            public void actionPerformed(ActionEvent e)
-                            {
-                                updateHistogram();
-                            }
-                        };
-
-                        _cbAbsoluteHisto = new JCheckBox();
-                        _cbAbsoluteHisto.addActionListener(action_listener);
-                        _cbAbsoluteHisto.addActionListener(new ActionListener()
-                        {
-                            @Override
-                            public void actionPerformed(ActionEvent actionevent)
-                            {
-                                _comboBitDepth.setEnabled(_cbAbsoluteHisto.isSelected());
-                                _prefs.putBoolean(PREF_ABS_HIST, _cbAbsoluteHisto.isSelected());
-                            }
-                        });
-                        _panel_cameraSettings.add(new JLabel("Display absolute histogram ?"));
-                        _panel_cameraSettings.add(_cbAbsoluteHisto);
-
-                        _comboBitDepth = new JComboBox(new String[] {"8-bit", "9-bit", "10-bit", "11-bit", "12-bit",
-                                "13-bit", "14-bit", "15-bit", "16-bit"});
-                        _comboBitDepth.addActionListener(action_listener);
-                        _comboBitDepth.addActionListener(new ActionListener()
-                        {
-                            @Override
-                            public void actionPerformed(ActionEvent actionevent)
-                            {
-                                _prefs.putInt(PREF_BITDEPTH, _comboBitDepth.getSelectedIndex());
-                            }
-                        });
-                        _comboBitDepth.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-                        _comboBitDepth.setEnabled(false);
-                        _panel_cameraSettings.add(new JLabel("Select your bit depth for abs. hitogram: "));
-                        _panel_cameraSettings.add(_comboBitDepth);
-
-                        // Acquisition
-                        _panelAcquisitions = new JPanel();
-                        _panelAcquisitions.setLayout(new BoxLayout(_panelAcquisitions, BoxLayout.Y_AXIS));
-
-                        // Color settings
-                        _panelColorChooser = new JPanel();
-                        _panelColorChooser.setLayout(new BoxLayout(_panelColorChooser, BoxLayout.Y_AXIS));
-                        painterPreferences = MicroscopePainterPreferences.getInstance();
-                        painterPreferences.setPreferences(_prefs.node("paintersPreferences"));
-                        painterPreferences.loadColors();
-
-                        HashMap<String, Color> allColors = painterPreferences.getColors();
-                        String[] allKeys = (String[]) allColors.keySet().toArray(new String[0]);
-                        String[] columnNames = {"Painter", "Color", "Transparency"};
-                        Object[][] data = new Object[allKeys.length][3];
-
-                        for (int i = 0; i < allKeys.length; ++i)
-                        {
-                            final int actualRow = i;
-                            String actualKey = allKeys[i].toString();
-                            data[i][0] = actualKey;
-                            data[i][1] = allColors.get(actualKey);
-                            final JSlider slider = new JSlider(0, 255, allColors.get(actualKey).getAlpha());
-                            slider.addChangeListener(new ChangeListener()
-                            {
-
-                                @Override
-                                public void stateChanged(ChangeEvent changeevent)
+                                _txtExposure.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+                                _txtExposure.addKeyListener(new KeyAdapter()
                                 {
-                                    painterTable.setValueAt(slider, actualRow, 2);
-                                }
-                            });
-                            data[i][2] = slider;
-                        }
-                        final AbstractTableModel tableModel = new JTableEvolvedModel(columnNames, data);
-                        painterTable = new JTable(tableModel);
-                        painterTable.getModel().addTableModelListener(new TableModelListener()
-                        {
+                                    @Override
+                                    public void keyPressed(KeyEvent keyevent)
+                                    {
+                                        if (keyevent.getKeyCode() == KeyEvent.VK_ENTER)
+                                            setExposure();
+                                    }
+                                });
+                                _panel_cameraSettings.add(new JLabel("Exposure [ms]: "));
+                                _panel_cameraSettings.add(_txtExposure);
 
-                            @Override
-                            public void tableChanged(TableModelEvent tablemodelevent)
-                            {
-                                if (tablemodelevent.getType() == TableModelEvent.UPDATE)
+                                _combo_binning = new JComboBox();
+                                _combo_binning.setMaximumRowCount(4);
+                                _combo_binning.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+                                _combo_binning.addActionListener(new ActionListener()
                                 {
-                                    int row = tablemodelevent.getFirstRow();
-                                    int col = tablemodelevent.getColumn();
-                                    String columnName = tableModel.getColumnName(col);
-                                    String painterName = (String) tableModel.getValueAt(row, 0);
-                                    if (columnName.contains("Color"))
+                                    public void actionPerformed(ActionEvent e)
                                     {
-                                        // New color value
-                                        int alpha = painterPreferences.getColor(painterName).getAlpha();
-                                        Color coloNew = (Color) tableModel.getValueAt(row, 1);
-                                        painterPreferences.setColor(painterName,
-                                                new Color(coloNew.getRed(), coloNew.getGreen(), coloNew.getBlue(),
-                                                        alpha));
+                                        changeBinning();
                                     }
-                                    else if (columnName.contains("Transparency"))
-                                    {
-                                        // New alpha value
-                                        Color c = painterPreferences.getColor(painterName);
-                                        int alphaValue = ((JSlider) tableModel.getValueAt(row, 2)).getValue();
-                                        painterPreferences.setColor(painterName,
-                                                new Color(c.getRed(), c.getGreen(), c.getBlue(), alphaValue));
-                                    }
-                                    /*
-                                     * for (int i = 0; i <
-                                     * tableModel.getRowCount(); ++i) { try {
-                                     * String painterName = (String)
-                                     * tableModel.getValueAt(i, 0); Color c =
-                                     * (Color) tableModel.getValueAt(i, 1); int
-                                     * alphaValue; if (ASpinnerChanged &&
-                                     * tablemodelevent.getFirstRow() == i) {
-                                     * alphaValue = ((JSlider)
-                                     * tableModel.getValueAt(i, 2)).getValue();
-                                     * } else { alphaValue =
-                                     * painterPreferences.getColor
-                                     * (painterPreferences
-                                     * .getPainterName(i)).getAlpha(); }
-                                     * painterPreferences.setColor(painterName,
-                                     * new Color(c.getRed(), c.getGreen(),
-                                     * c.getBlue(), alphaValue)); } catch
-                                     * (Exception e) { System.out.println(
-                                     * "error with painter table update"); } }
-                                     */
-                                }
-                            }
-                        });
-                        painterTable.setPreferredScrollableViewportSize(new Dimension(500, 70));
-                        painterTable.setFillsViewportHeight(true);
+                                });
 
-                        // Create the scroll pane and add the table to it.
-                        JScrollPane scrollPane = new JScrollPane(painterTable);
+                                _panel_cameraSettings.add(new JLabel("Binning: "));
+                                _panel_cameraSettings.add(_combo_binning);
 
-                        // Set up renderer and editor for the Favorite Color
-                        // column.
-                        painterTable.setDefaultRenderer(Color.class, new ColorRenderer(true));
-                        painterTable.setDefaultEditor(Color.class, new ColorEditor());
-
-                        painterTable.setDefaultRenderer(JSlider.class, new SliderRenderer(0, 255));
-                        painterTable.setDefaultEditor(JSlider.class, new SliderEditor());
-
-                        _panelColorChooser.add(scrollPane);
-                        _panelColorChooser.add(Box.createVerticalGlue());
-
-                        _mainPanel = new JPanel();
-                        _mainPanel.setLayout(new BorderLayout());
-
-                        // EDITOR
-                        // will refresh the data and verify if any change
-                        // occurs.
-                        editor = new PropertyEditor(MMMainFrame.this);
-                        editor.setCore(mCore);
-                        editor.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-                        editor.addToMainDesktopPane();
-                        editor.refresh();
-                        // editor.start();
-
-                        add(_mainPanel);
-                        initializeGUI();
-                        loadPreferences();
-                        refreshGUI();
-                        setResizable(true);
-                        addToMainDesktopPane();
-                        instanced = true;
-                        instancing = false;
-                        _singleton = MMMainFrame.this;
-                        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-                        addFrameListener(new IcyFrameAdapter()
-                        {
-                            @Override
-                            public void icyFrameClosing(IcyFrameEvent e)
-                            {
-                                if (getInternalFrame().getDefaultCloseOperation() == WindowConstants.DO_NOTHING_ON_CLOSE)
+                                _combo_shutters = new JComboBox();
+                                _combo_shutters.addActionListener(new ActionListener()
                                 {
-                                    if (!_list_plugin.isEmpty())
+                                    public void actionPerformed(ActionEvent arg0)
                                     {
-                                        if (!ConfirmDialog
-                                                .confirm("Some plugins are still running. Are you sure you want to close this ?"))
-                                            return;
+                                        try
+                                        {
+                                            if (_combo_shutters.getSelectedItem() != null)
+                                            {
+                                                mCore.setShutterDevice((String) _combo_shutters.getSelectedItem());
+                                                _prefs.put(PREF_SHUTTER, (String) _combo_shutters
+                                                        .getItemAt(_combo_shutters.getSelectedIndex()));
+                                            }
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            e.printStackTrace();
+                                        }
                                     }
-                                    if (painterPreferences != null)
-                                        painterPreferences.saveColors();
-                                    _pluginListEmpty = true;
-                                    setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-                                    close();
-                                    Icy.getMainInterface().removeCanExitListener(acceptListener);
+                                });
+                                _combo_shutters.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+                                _panel_cameraSettings.add(new JLabel("Shutter : "));
+                                _panel_cameraSettings.add(_combo_shutters);
+
+                                ActionListener action_listener = new ActionListener()
+                                {
+                                    @Override
+                                    public void actionPerformed(ActionEvent e)
+                                    {
+                                        updateHistogram();
+                                    }
+                                };
+
+                                _cbAbsoluteHisto = new JCheckBox();
+                                _cbAbsoluteHisto.addActionListener(action_listener);
+                                _cbAbsoluteHisto.addActionListener(new ActionListener()
+                                {
+                                    @Override
+                                    public void actionPerformed(ActionEvent actionevent)
+                                    {
+                                        _comboBitDepth.setEnabled(_cbAbsoluteHisto.isSelected());
+                                        _prefs.putBoolean(PREF_ABS_HIST, _cbAbsoluteHisto.isSelected());
+                                    }
+                                });
+                                _panel_cameraSettings.add(new JLabel("Display absolute histogram ?"));
+                                _panel_cameraSettings.add(_cbAbsoluteHisto);
+
+                                _comboBitDepth = new JComboBox(new String[] {"8-bit", "9-bit", "10-bit", "11-bit",
+                                        "12-bit", "13-bit", "14-bit", "15-bit", "16-bit"});
+                                _comboBitDepth.addActionListener(action_listener);
+                                _comboBitDepth.addActionListener(new ActionListener()
+                                {
+                                    @Override
+                                    public void actionPerformed(ActionEvent actionevent)
+                                    {
+                                        _prefs.putInt(PREF_BITDEPTH, _comboBitDepth.getSelectedIndex());
+                                    }
+                                });
+                                _comboBitDepth.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+                                _comboBitDepth.setEnabled(false);
+                                _panel_cameraSettings.add(new JLabel("Select your bit depth for abs. hitogram: "));
+                                _panel_cameraSettings.add(_comboBitDepth);
+
+                                // Acquisition
+                                _panelAcquisitions = new JPanel();
+                                _panelAcquisitions.setLayout(new BoxLayout(_panelAcquisitions, BoxLayout.Y_AXIS));
+
+                                // Color settings
+                                _panelColorChooser = new JPanel();
+                                _panelColorChooser.setLayout(new BoxLayout(_panelColorChooser, BoxLayout.Y_AXIS));
+                                painterPreferences = MicroscopePainterPreferences.getInstance();
+                                painterPreferences.setPreferences(_prefs.node("paintersPreferences"));
+                                painterPreferences.loadColors();
+
+                                HashMap<String, Color> allColors = painterPreferences.getColors();
+                                String[] allKeys = (String[]) allColors.keySet().toArray(new String[0]);
+                                String[] columnNames = {"Painter", "Color", "Transparency"};
+                                Object[][] data = new Object[allKeys.length][3];
+
+                                for (int i = 0; i < allKeys.length; ++i)
+                                {
+                                    final int actualRow = i;
+                                    String actualKey = allKeys[i].toString();
+                                    data[i][0] = actualKey;
+                                    data[i][1] = allColors.get(actualKey);
+                                    final JSlider slider = new JSlider(0, 255, allColors.get(actualKey).getAlpha());
+                                    slider.addChangeListener(new ChangeListener()
+                                    {
+
+                                        @Override
+                                        public void stateChanged(ChangeEvent changeevent)
+                                        {
+                                            painterTable.setValueAt(slider, actualRow, 2);
+                                        }
+                                    });
+                                    data[i][2] = slider;
                                 }
+                                final AbstractTableModel tableModel = new JTableEvolvedModel(columnNames, data);
+                                painterTable = new JTable(tableModel);
+                                painterTable.getModel().addTableModelListener(new TableModelListener()
+                                {
+
+                                    @Override
+                                    public void tableChanged(TableModelEvent tablemodelevent)
+                                    {
+                                        if (tablemodelevent.getType() == TableModelEvent.UPDATE)
+                                        {
+                                            int row = tablemodelevent.getFirstRow();
+                                            int col = tablemodelevent.getColumn();
+                                            String columnName = tableModel.getColumnName(col);
+                                            String painterName = (String) tableModel.getValueAt(row, 0);
+                                            if (columnName.contains("Color"))
+                                            {
+                                                // New color value
+                                                int alpha = painterPreferences.getColor(painterName).getAlpha();
+                                                Color coloNew = (Color) tableModel.getValueAt(row, 1);
+                                                painterPreferences.setColor(painterName, new Color(coloNew.getRed(),
+                                                        coloNew.getGreen(), coloNew.getBlue(), alpha));
+                                            }
+                                            else if (columnName.contains("Transparency"))
+                                            {
+                                                // New alpha value
+                                                Color c = painterPreferences.getColor(painterName);
+                                                int alphaValue = ((JSlider) tableModel.getValueAt(row, 2)).getValue();
+                                                painterPreferences.setColor(painterName,
+                                                        new Color(c.getRed(), c.getGreen(), c.getBlue(), alphaValue));
+                                            }
+                                            /*
+                                             * for (int i = 0; i <
+                                             * tableModel.getRowCount(); ++i) { try {
+                                             * String painterName = (String)
+                                             * tableModel.getValueAt(i, 0); Color c =
+                                             * (Color) tableModel.getValueAt(i, 1); int
+                                             * alphaValue; if (ASpinnerChanged &&
+                                             * tablemodelevent.getFirstRow() == i) {
+                                             * alphaValue = ((JSlider)
+                                             * tableModel.getValueAt(i, 2)).getValue();
+                                             * } else { alphaValue =
+                                             * painterPreferences.getColor
+                                             * (painterPreferences
+                                             * .getPainterName(i)).getAlpha(); }
+                                             * painterPreferences.setColor(painterName,
+                                             * new Color(c.getRed(), c.getGreen(),
+                                             * c.getBlue(), alphaValue)); } catch
+                                             * (Exception e) { System.out.println(
+                                             * "error with painter table update"); } }
+                                             */
+                                        }
+                                    }
+                                });
+                                painterTable.setPreferredScrollableViewportSize(new Dimension(500, 70));
+                                painterTable.setFillsViewportHeight(true);
+
+                                // Create the scroll pane and add the table to it.
+                                JScrollPane scrollPane = new JScrollPane(painterTable);
+
+                                // Set up renderer and editor for the Favorite Color
+                                // column.
+                                painterTable.setDefaultRenderer(Color.class, new ColorRenderer(true));
+                                painterTable.setDefaultEditor(Color.class, new ColorEditor());
+
+                                painterTable.setDefaultRenderer(JSlider.class, new SliderRenderer(0, 255));
+                                painterTable.setDefaultEditor(JSlider.class, new SliderEditor());
+
+                                _panelColorChooser.add(scrollPane);
+                                _panelColorChooser.add(Box.createVerticalGlue());
+
+                                _mainPanel = new JPanel();
+                                _mainPanel.setLayout(new BorderLayout());
+
+                                // EDITOR
+                                // will refresh the data and verify if any change
+                                // occurs.
+                                editor = new PropertyEditor(MMMainFrame.this);
+                                editor.setCore(mCore);
+                                editor.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+                                editor.addToMainDesktopPane();
+                                editor.refresh();
+                                // editor.start();
+
+                                add(_mainPanel);
+                                initializeGUI();
+                                loadPreferences();
+                                refreshGUI();
+                                setResizable(true);
+                                addToMainDesktopPane();
+                                instanced = true;
+                                instancing = false;
+                                _singleton = MMMainFrame.this;
+                                setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                                addFrameListener(new IcyFrameAdapter()
+                                {
+                                    @Override
+                                    public void icyFrameClosing(IcyFrameEvent e)
+                                    {
+                                        if (getInternalFrame().getDefaultCloseOperation() == WindowConstants.DO_NOTHING_ON_CLOSE)
+                                        {
+                                            if (!_list_plugin.isEmpty())
+                                            {
+                                                if (!ConfirmDialog
+                                                        .confirm("Some plugins are still running. Are you sure you want to close this ?"))
+                                                    return;
+                                            }
+                                            if (painterPreferences != null)
+                                                painterPreferences.saveColors();
+                                            _pluginListEmpty = true;
+                                            setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+                                            close();
+                                            Icy.getMainInterface().removeCanExitListener(acceptListener);
+                                        }
+                                    }
+                                });
+                                acceptListener = new AcceptListener()
+                                {
+
+                                    @Override
+                                    public boolean accept(Object source)
+                                    {
+                                        close();
+                                        return _pluginListEmpty;
+                                    }
+                                };
+
+                                adapter = new MainAdapter()
+                                {
+
+                                    @Override
+                                    public void sequenceOpened(MainEvent event)
+                                    {
+                                        updateHistogram();
+                                    }
+
+                                };
+                                Icy.getMainInterface().addCanExitListener(acceptListener);
+                                Icy.getMainInterface().addListener(adapter);
                             }
+
                         });
-                        acceptListener = new AcceptListener()
-                        {
-
-                            @Override
-                            public boolean accept(Object source)
-                            {
-                                close();
-                                return _pluginListEmpty;
-                            }
-                        };
-
-                        adapter = new MainAdapter()
-                        {
-
-                            @Override
-                            public void sequenceOpened(MainEvent event)
-                            {
-                                updateHistogram();
-                            }
-
-                        };
-                        Icy.getMainInterface().addCanExitListener(acceptListener);
-                        Icy.getMainInterface().addListener(adapter);
                     }
-
                 });
+            }
+
+            /**
+             * Update the histogram with camera settings.
+             */
+            private void updateHistogram()
+            {
+                Sequence s = Icy.getMainInterface().getFocusedSequence();
+                if (s != null && s instanceof MicroscopeSequence && !s.getDataType_().isFloat())
+                {
+                    for (Viewer v : s.getViewers())
+                    {
+                        for (LUTChannel lutband : v.getLut().getLutChannels())
+                        {
+                            if (_cbAbsoluteHisto.isSelected())
+                            {
+                                s.setAutoUpdateChannelBounds(false);
+                                double maxvalue = Math.pow(2, _comboBitDepth.getSelectedIndex() + 8);
+                                lutband.getScaler().setAbsLeftRightIn(0, maxvalue);
+                            }
+                            else
+                            {
+                                s.setAutoUpdateChannelBounds(true);
+                                lutband.getScaler().setAbsLeftRightIn(lutband.getMin(), lutband.getMax());
+                            }
+                        }
+                    }
+                }
             }
         });
     }
 
-    /**
-     * Update the histogram with camera settings.
-     */
-    private void updateHistogram()
+    public boolean waitForInstance()
     {
-        Sequence s = Icy.getMainInterface().getFocusedSequence();
-        if (s != null && s instanceof MicroscopeSequence && !s.getDataType_().isFloat())
+        while (!MMMainFrame.instanced())
         {
-            for (Viewer v : s.getViewers())
-            {
-                for (LUTChannel lutband : v.getLut().getLutChannels())
-                {
-                    if (_cbAbsoluteHisto.isSelected())
-                    {
-                        s.setAutoUpdateChannelBounds(false);
-                        double maxvalue = Math.pow(2, _comboBitDepth.getSelectedIndex() + 8);
-                        lutband.getScaler().setAbsLeftRightIn(0, maxvalue);
-                    }
-                    else
-                    {
-                        s.setAutoUpdateChannelBounds(true);
-                        lutband.getScaler().setAbsLeftRightIn(lutband.getMin(), lutband.getMax());
-                    }
-                }
-            }
+            if (!MMMainFrame.isInstancing())
+                return false;
+            ThreadUtil.sleep(100);
         }
+        return true;
     }
 
     /**
@@ -946,7 +972,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
         {
             _sysConfigFile = _root.get(PREFS_OPEN_LAST, "");
         }
-        if (mCore != null)
+        else if (mCore != null)
         {
             if (!ConfirmDialog.confirm("Are you sure ", "Do you want to load another configuration ?"))
             {
@@ -1030,8 +1056,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
                         else
                         {
                             _isConfigLoaded = true;
-                            if (firstStart)
-                                _root.put(PREFS_OPEN_LAST, _sysConfigFile);
+                            _root.put(PREFS_OPEN_LAST, _sysConfigFile);
                             _prefs = _root.node(new File(_sysConfigFile).getName());
                             // System.out.println("Save file: " +
                             // _prefs.absolutePath());
@@ -2267,9 +2292,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Load the preset settings.
      */
-    private void loadPresets()
+    private void loadPresets(String filename)
     {
-        String filename = xmlFileChooser();
         if (filename == null)
             return;
         XMLPreferencesRoot root = new XMLPreferencesRoot(filename);
@@ -2280,9 +2304,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
     /**
      * Save the preset settings.
      */
-    private void savePresets()
+    private void savePresets(String filename)
     {
-        String filename = xmlFileChooser();
         if (filename == null)
             return;
         XMLPreferencesRoot root = new XMLPreferencesRoot(filename);

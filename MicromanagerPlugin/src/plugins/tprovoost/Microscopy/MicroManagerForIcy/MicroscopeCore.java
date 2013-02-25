@@ -26,7 +26,7 @@ import javax.swing.event.CaretListener;
 import mmcorej.CMMCore;
 import mmcorej.StrVector;
 import plugins.tprovoost.Microscopy.MicroManagerForIcy.Tools.MathTools;
-import plugins.tprovoost.scriptenginehandler.ScriptFunctionCompletion.BindingFunction;
+import plugins.tprovoost.scripteditor.completion.types.ScriptFunctionCompletion.BindingFunction;
 
 /**
  * This class represents the interface between the software and the hardware. It is a singleton,
