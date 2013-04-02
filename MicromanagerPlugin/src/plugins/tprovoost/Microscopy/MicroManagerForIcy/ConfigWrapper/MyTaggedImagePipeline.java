@@ -60,13 +60,14 @@ public class MyTaggedImagePipeline {
 		acqName_ = getClass().getName();
 		listener = new SequenceCacheListener(sequenceSettings, summaryMetadata_);
 		Object resultingData = listener.getResultingData();
+		System.out.println(display);
 		if (display) {
 			if (resultingData instanceof Sequence) {
-				Icy.addSequence((Sequence) resultingData);
+				Icy.getMainInterface().addSequence((Sequence) resultingData);
 			} else {
 				Sequence[] sequences = (Sequence[]) resultingData;
 				for (Sequence s : sequences)
-					Icy.addSequence(s);
+					Icy.getMainInterface().addSequence(s);
 			}
 		}
 		imageCache_ = new MMImageCache(new TaggedImageStorageRam(summaryMetadata_));

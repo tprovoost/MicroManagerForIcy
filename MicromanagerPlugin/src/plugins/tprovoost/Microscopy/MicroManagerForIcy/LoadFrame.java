@@ -1,7 +1,6 @@
 package plugins.tprovoost.Microscopy.MicroManagerForIcy;
 
 import icy.gui.component.IcyLogo;
-import icy.gui.dialog.ConfirmDialog;
 import icy.main.Icy;
 
 import java.awt.BorderLayout;
@@ -41,13 +40,19 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
-import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.micromanager.conf2.ConfiguratorDlg2;
 
+/**
+ * This class is the loading dialog used to select the configuration. Currently, this dialog is only
+ * visible the first time the user launches the plugin, and when he hits the "Load Configuration"
+ * button in the {@link MMMainFrame}.
+ * 
+ * @author Thomas Provoost
+ */
 public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 {
 
@@ -77,7 +82,6 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
     private int _actual_file_nb_groups;
     private int _actual_file_nb_presets;
     private boolean _isRightDisplayed = false;
-    private static LoadFrame singleton;
 
     // ---------------
     // UI Variables
@@ -88,7 +92,7 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
 
     // File choser panel
     private JPanel _panel_files;
-    private static JList _list_files;
+    private JList _list_files;
     private JScrollPane _scroll_files;
 
     // Device List Panel
@@ -111,13 +115,17 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
     // resume windows
     private JPanel _panel_resume;
     private JTextArea _list_resume;
+    private JPanel panelSouth;
+    private JPanel panel;
 
-    private LoadFrame()
+    // private JCheckBox cbAlways;
+    // private Component horizontalGlue;
+
+    public LoadFrame()
     {
         setTitle("Please choose your configuration file");
         _retval = -1;
         setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-        setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
         addWindowListener(new WindowAdapter()
         {
             public void windowClosing(WindowEvent windowevent)
@@ -207,73 +215,8 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
         _panel_configs.add(_scroll_configs);
 
         _panel_main = new JPanel();
-        _panel_buttons = new JPanel();
 
         loadPrefs();
-
-        _btn_open_selected = new JButton("Open File");
-        _btn_open_selected.setToolTipText("Open currently selected file.");
-        _btn_open_selected.setEnabled(false);
-        _btn_open_selected.addActionListener(new ActionListener()
-        {
-
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                _retval = 0;
-                savePrefs();
-                setVisible(false);
-            }
-        });
-        _btn_select_file = new JButton("+");
-        _btn_select_file.setToolTipText("Add a new file to the list.");
-        _btn_select_file.addActionListener(new ActionListener()
-        {
-
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                loadConfig();
-                repaint();
-            }
-        });
-        _btn_remove = new JButton("-");
-        _btn_remove.setToolTipText("Remove current file from the list.");
-        _btn_remove.addActionListener(new ActionListener()
-        {
-
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                if (!_list_files.isSelectionEmpty())
-                    _CFGFiles.remove(_list_files.getSelectedIndex());
-                savePrefs();
-            }
-        });
-        _btn_wizard = new JButton("Wizard");
-        _btn_wizard.setToolTipText("Run the Configuration Wizard Tool. Disabled.");
-        _btn_wizard.addActionListener(new ActionListener()
-        {
-
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                ConfiguratorDlg2 configurator = new ConfiguratorDlg2(MicroscopeCore.getCore(), "");
-                configurator.setVisible(true);
-                String res = configurator.getFileName();
-                if (sysConfigFile == "" || sysConfigFile == res || res == "")
-                {
-                    sysConfigFile = res;
-                }
-                else
-                {
-                    loadFile(sysConfigFile);
-                    if (ConfirmDialog.confirm("Launch new configuration",
-                            "Do you want to launch the new configuration?"))
-                        loadConfig();
-                }
-            }
-        });
         if (!_isRightDisplayed)
         {
             _btn_more = new JButton("More...");
@@ -308,13 +251,6 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
         _panel_main.add(_panel_files);
         _panel_main.add(_panel_devices);
         _panel_main.add(_panel_configs);
-        _panel_buttons.setLayout(new BoxLayout(_panel_buttons, BoxLayout.X_AXIS));
-        _panel_buttons.add(Box.createHorizontalGlue());
-        _panel_buttons.add(_btn_open_selected);
-        _panel_buttons.add(_btn_select_file);
-        _panel_buttons.add(_btn_remove);
-        _panel_buttons.add(_btn_wizard);
-        _panel_buttons.add(_btn_more);
 
         _panel_top = new IcyLogo("Configuration : Choose your file");
         _panel_top.setPreferredSize(new Dimension(0, 80));
@@ -327,10 +263,88 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
         _panel_resume.add(_lbl_resume);
         _panel_resume.add(_list_resume);
 
-        setLayout(new BorderLayout());
-        add(_panel_top, BorderLayout.NORTH);
-        add(_panel_main, BorderLayout.CENTER);
-        add(_panel_buttons, BorderLayout.SOUTH);
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().add(_panel_top, BorderLayout.NORTH);
+        getContentPane().add(_panel_main, BorderLayout.CENTER);
+
+        panelSouth = new JPanel();
+        getContentPane().add(panelSouth, BorderLayout.SOUTH);
+        panelSouth.setLayout(new BorderLayout(0, 0));
+
+        panel = new JPanel();
+        // panelSouth.add(panel, BorderLayout.NORTH);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+
+        // horizontalGlue = Box.createHorizontalGlue();
+        // panel.add(horizontalGlue);
+
+        // cbAlways = new JCheckBox("Open this file by default next time");
+        // panel.add(cbAlways);
+        _panel_buttons = new JPanel();
+        panelSouth.add(_panel_buttons);
+
+        _btn_open_selected = new JButton("Open File");
+        _btn_open_selected.setToolTipText("Open currently selected file.");
+        _btn_open_selected.setEnabled(false);
+        _btn_open_selected.addActionListener(new ActionListener()
+        {
+
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                _retval = 0;
+                savePrefs();
+                setVisible(false);
+            }
+        });
+        _btn_select_file = new JButton("+");
+        _btn_select_file.setToolTipText("Add a new file to the list.");
+        _btn_select_file.addActionListener(new ActionListener()
+        {
+
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                loadConfig();
+            }
+        });
+        _btn_remove = new JButton("-");
+        _btn_remove.setToolTipText("Remove current file from the list.");
+        _btn_remove.addActionListener(new ActionListener()
+        {
+
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                if (!_list_files.isSelectionEmpty())
+                    _CFGFiles.remove(_list_files.getSelectedIndex());
+                savePrefs();
+            }
+        });
+        _btn_wizard = new JButton("Wizard");
+        _btn_wizard.setToolTipText("Run the Configuration Wizard Tool. Disabled.");
+        _btn_wizard.addActionListener(new ActionListener()
+        {
+
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                ConfiguratorDlg2 configurator = new ConfiguratorDlg2(MicroscopeCore.getCore(), "");
+                configurator.setVisible(true);
+                String res = configurator.getFileName();
+                if (res != "")
+                    sysConfigFile = res;
+                loadFile();
+            }
+        });
+        _btn_wizard.setEnabled(false);
+        _panel_buttons.setLayout(new BoxLayout(_panel_buttons, BoxLayout.X_AXIS));
+        _panel_buttons.add(Box.createHorizontalGlue());
+        _panel_buttons.add(_btn_open_selected);
+        _panel_buttons.add(_btn_select_file);
+        _panel_buttons.add(_btn_remove);
+        _panel_buttons.add(_btn_wizard);
+        _panel_buttons.add(_btn_more);
         addKeyAndContainerListenerRecursively(this);
         updateGUI();
     }
@@ -338,6 +352,7 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
     public int showDialog()
     {
         setVisible(true);
+        removeAll();
         return _retval;
     }
 
@@ -383,15 +398,14 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
         pos_x = _prefs.getInt(X_POS, pos_x);
         pos_y = _prefs.getInt(Y_POS, pos_y);
         setLocation(pos_x, pos_y);
+
         _isRightDisplayed = _prefs.getBoolean(DISP_RIGHT, false);
         if (_isRightDisplayed)
-            setSize(width - 200, heigth);
-        else
-            setSize(width, heigth);
-
+            width -= 200;
+        setSize(width, heigth);
     }
 
-    public void loadConfig()
+    private void loadConfig()
     {
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(new FileNameExtensionFilter("Configuration Files (.cfg)", "cfg"));
@@ -399,17 +413,18 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
         if (returnVal == JFileChooser.APPROVE_OPTION)
         {
             sysConfigFile = fc.getSelectedFile().getAbsolutePath();
-            loadFile(sysConfigFile);
+            loadFile();
         }
     }
 
-    public void loadFile(String sysConfigFile)
+    private void loadFile()
     {
         if (!_CFGFiles.contains(sysConfigFile))
             _CFGFiles.addElement(sysConfigFile);
         else
             _list_files.setSelectedValue(sysConfigFile, true);
         savePrefs();
+        repaint();
     }
 
     private void loadFileAttribs() throws IOException
@@ -597,12 +612,4 @@ public class LoadFrame extends JDialog implements KeyListener, ContainerListener
         validate();
         repaint();
     }
-
-    public static LoadFrame getInstance()
-    {
-        if (singleton == null)
-            singleton = new LoadFrame();
-        return singleton;
-    }
-
 }
