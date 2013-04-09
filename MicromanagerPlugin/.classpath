@@ -4,8 +4,5 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/javascripter"/>
 	<classpathentry kind="lib" path="/Icy-App/icy.jar"/>
-	<classpathentry kind="lib" path="/Icy-App/lib/MMAcqEngine.jar"/>
-	<classpathentry kind="lib" path="/Icy-App/lib/MMCoreJ.jar"/>
-	<classpathentry kind="lib" path="/Icy-App/lib/MMJ_.jar" sourcepath="/mmstudio"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

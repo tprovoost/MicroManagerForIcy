@@ -22,6 +22,7 @@ import icy.preferences.XMLPreferences.XMLPreferencesRoot;
 import icy.resource.icon.IcyIcon;
 import icy.sequence.Sequence;
 import icy.system.thread.ThreadUtil;
+import icy.util.ClassUtil;
 import ij.gui.ImageWindow;
 
 import java.awt.BorderLayout;
@@ -3407,8 +3408,11 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
         IAcquisitionEngine2010 pipeline = null;
         try
         {
-            Class<?> acquisitionEngine2010Class = Class.forName("org.micromanager.AcquisitionEngine2010");
-            pipeline = (IAcquisitionEngine2010) acquisitionEngine2010Class.getConstructors()[0].newInstance(this);
+            Class<?> acquisitionEngine2010Class = ClassUtil.findClass("org.micromanager.AcquisitionEngine2010");
+            if (acquisitionEngine2010Class != null)
+            {
+                pipeline = (IAcquisitionEngine2010) acquisitionEngine2010Class.getConstructors()[0].newInstance(this);
+            }
         }
         catch (IllegalArgumentException e)
         {
@@ -3431,6 +3435,10 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
             e.printStackTrace();
         }
         catch (ClassNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+        catch (NoClassDefFoundError e)
         {
             e.printStackTrace();
         }
