@@ -16,7 +16,8 @@ import icy.gui.viewer.Viewer;
 import icy.image.lut.LUT.LUTChannel;
 import icy.main.Icy;
 import icy.network.NetworkUtil;
-import icy.preferences.IcyPreferences;
+import icy.plugin.PluginLoader;
+import icy.preferences.PluginPreferences;
 import icy.preferences.XMLPreferences;
 import icy.preferences.XMLPreferences.XMLPreferencesRoot;
 import icy.resource.icon.IcyIcon;
@@ -270,7 +271,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
         // --------------
         _sysConfigFile = "";
         _isConfigLoaded = false;
-        _root = IcyPreferences.pluginsRoot().node(NODE_NAME);
+        _root = PluginPreferences.getPreferences().node(NODE_NAME);
         final MainFrame mainFrame = Icy.getMainInterface().getMainFrame();
 
         // --------------
@@ -307,6 +308,8 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
                     {
                         while (!_isConfigLoaded)
                         {
+                            if (!instancing)
+                                return;
                             try
                             {
                                 Thread.sleep(10);
@@ -1085,6 +1088,7 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
                     dialog.setVisible(true);
                 }
             });
+            instancing = false;
             return;
         }
         /*
@@ -2078,7 +2082,6 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
         {
             ThreadUtil.bgRun(new Runnable()
             {
-
                 @Override
                 public void run()
                 {
@@ -3408,11 +3411,15 @@ public class MMMainFrame extends IcyFrame implements ScriptInterface
         IAcquisitionEngine2010 pipeline = null;
         try
         {
+            Thread currentThread = Thread.currentThread();
+            ClassLoader currentClassLoader = currentThread.getContextClassLoader();
+            currentThread.setContextClassLoader(PluginLoader.getLoader());
             Class<?> acquisitionEngine2010Class = ClassUtil.findClass("org.micromanager.AcquisitionEngine2010");
             if (acquisitionEngine2010Class != null)
             {
                 pipeline = (IAcquisitionEngine2010) acquisitionEngine2010Class.getConstructors()[0].newInstance(this);
             }
+            currentThread.setContextClassLoader(currentClassLoader);
         }
         catch (IllegalArgumentException e)
         {

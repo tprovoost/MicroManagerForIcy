@@ -86,6 +86,7 @@ import javax.swing.table.TableModel;
 import mmcorej.CMMCore;
 
 import org.micromanager.AdvancedOptionsDialog;
+import org.micromanager.MMOptions;
 import org.micromanager.MMStudioMainFrame;
 import org.micromanager.acquisition.ComponentTitledBorder;
 import org.micromanager.acquisition.TaggedImageStorageDiskDefault;
@@ -111,8 +112,8 @@ import org.micromanager.utils.TooltipTextMaker;
 import com.swtdesigner.SwingResourceManager;
 
 /**
- * Time-lapse, channel and z-stack acquisition setup dialog. This dialog
- * specifies all parameters for the Image5D acquisition.
+ * Time-lapse, channel and z-stack acquisition setup dialog.
+ * This dialog specifies all parameters for the MDA acquisition.
  */
 public class AcqControlDlg extends JPanel implements PropertyChangeListener
 {
@@ -125,6 +126,7 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
     public static final String NEW_ACQFILE_NAME = "MMAcquistion.xml";
     public static final String ACQ_SETTINGS_NODE = "AcquistionSettings";
     public static final String COLOR_SETTINGS_NODE = "ColorSettings";
+    private static final String EXPOSURE_SETTINGS_NODE = "AcqExposureSettings";
     private JComboBox channelGroupCombo_;
     private JTextArea commentTextArea_;
     private JComboBox zValCombo_;
@@ -141,9 +143,11 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
     private JTable channelTable_;
     private JSpinner numFrames_;
     private ChannelTableModel model_;
+    private MMOptions options_;
     private Preferences prefs_;
     private Preferences acqPrefs_;
     private Preferences colorPrefs_;
+    private Preferences exposurePrefs_;
     private File acqFile_;
     private String acqDir_;
     private int zVals_ = 0;
@@ -349,10 +353,19 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
             else if (col == 1)
             {
                 channel.config_ = value.toString();
+                channel.exposure_ = exposurePrefs_.getDouble("Exposure_" + acqEng_.getChannelGroup() + "_"
+                        + channel.config_, 10.0);
             }
             else if (col == 2)
             {
                 channel.exposure_ = ((Double) value).doubleValue();
+                exposurePrefs_.putDouble("Exposure_" + acqEng_.getChannelGroup() + "_" + channel.config_,
+                        channel.exposure_);
+                // if (options_.syncExposureMainAndMDA_)
+                // {
+                // gui_.setChannelExposureTime(acqEng_.getChannelGroup(), channel.config_,
+                // channel.exposure_);
+                // }
             }
             else if (col == 3)
             {
@@ -390,8 +403,8 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         }
 
         /*
-         * Catched events thrown by the ColorEditor Will write the new color
-         * into the Color Prefs
+         * Catched events thrown by the ColorEditor
+         * Will write the new color into the Color Prefs
          */
         public void tableChanged(TableModelEvent e)
         {
@@ -424,6 +437,9 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
             return channels_;
         }
 
+        /**
+         * Adds a new channel to the list in the MDA window
+         */
         public void addNewChannel()
         {
             ChannelSpec channel = new ChannelSpec();
@@ -454,6 +470,8 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
                 {
                     channel.color_ = new Color(colorPrefs_.getInt("Color_" + acqEng_.getChannelGroup() + "_"
                             + channel.config_, Color.white.getRGB()));
+                    channel.exposure_ = exposurePrefs_.getDouble("Exposure_" + acqEng_.getChannelGroup() + "_"
+                            + channel.config_, 10.0);
                     channels_.add(channel);
                 }
             }
@@ -467,6 +485,9 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
             }
         }
 
+        /**
+         * Used to change the order of the channels in the MDA window
+         */
         public int rowDown(int rowIdx)
         {
             if (rowIdx >= 0 && rowIdx < channels_.size() - 1)
@@ -479,6 +500,9 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
             return rowIdx;
         }
 
+        /**
+         * Used to change the order of the channels in the MDA window
+         */
         public int rowUp(int rowIdx)
         {
             if (rowIdx >= 1 && rowIdx < channels_.size())
@@ -497,8 +521,8 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         }
 
         /**
-         * Remove all channels from the list which are not compatible with the
-         * current acquisition settings
+         * Remove all channels from the list which are not compatible with
+         * the current acquisition settings
          */
         public void cleanUpConfigurationList()
         {
@@ -531,11 +555,38 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
             }
             return false;
         }
+
+        /**
+         * Updates the exposure time in the given preset
+         * 
+         * @param channelGroup
+         *        - if it does not match current channelGroup,
+         *        no action will be taken
+         * @param channel
+         *        - preset for which to change exposire time
+         * @param exposure
+         *        - desired exposure time
+         */
+        public void setChannelExposureTime(String channelGroup, String channel, double exposure)
+        {
+            if (!channelGroup.equals(acqEng_.getChannelGroup()))
+                return;
+            for (ChannelSpec ch : channels_)
+            {
+                if (ch.config_.equals(channel))
+                {
+                    ch.exposure_ = exposure;
+                    this.fireTableDataChanged();
+                }
+
+            }
+        }
+
     }
 
     /**
-     * Cell editing using either JTextField or JComboBox depending on whether
-     * the property enforces a set of allowed values.
+     * Cell editing using either JTextField or JComboBox depending on whether the
+     * property enforces a set of allowed values.
      */
     public class ChannelCellEditor extends AbstractCellEditor implements TableCellEditor
     {
@@ -635,12 +686,13 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
             }
         }
 
-        // This method is called when editing is completed.
-        // It must return the new value to be stored in the cell.
+        /**
+         * This method is called when editing is completed.
+         * It must return the new value to be stored in the cell.
+         */
         public Object getCellEditorValue()
         {
-            // TODO: if content of column does not match type we get an
-            // exception
+            // TODO: if content of column does not match type we get an exception
             try
             {
                 if (editCol_ == 0)
@@ -990,8 +1042,8 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
     }
 
     /**
-     * Acquisition control dialog box. Specification of all parameters required
-     * for the acquisition.
+     * Acquisition control dialog box.
+     * Specification of all parameters required for the acquisition.
      * 
      * @param acqEng
      *        - acquisition engine
@@ -1005,11 +1057,12 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         prefs_ = prefs;
         gui_ = gui;
         guiColors_ = new GUIColors();
+        // options_ = options;
 
         Preferences root = Preferences.userNodeForPackage(this.getClass());
         acqPrefs_ = root.node(root.absolutePath() + "/" + ACQ_SETTINGS_NODE);
         colorPrefs_ = root.node(root.absolutePath() + "/" + COLOR_SETTINGS_NODE);
-
+        exposurePrefs_ = root.node(root.absolutePath() + "/" + EXPOSURE_SETTINGS_NODE);
         numberFormat_ = NumberFormat.getNumberInstance();
 
         acqEng_ = acqEng;
@@ -1256,10 +1309,10 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         acquisitionOrderPanel_.add(acqOrderBox_);
 
         acqOrderModes_ = new AcqOrderMode[4];
-        acqOrderModes_[0] = new AcqOrderMode(AcqOrderMode.TIME_POS_CHANNEL_SLICE);
-        acqOrderModes_[1] = new AcqOrderMode(AcqOrderMode.TIME_POS_SLICE_CHANNEL);
-        acqOrderModes_[2] = new AcqOrderMode(AcqOrderMode.POS_TIME_CHANNEL_SLICE);
-        acqOrderModes_[3] = new AcqOrderMode(AcqOrderMode.POS_TIME_SLICE_CHANNEL);
+        acqOrderModes_[0] = new AcqOrderMode(AcqOrderMode.TIME_POS_SLICE_CHANNEL);
+        acqOrderModes_[1] = new AcqOrderMode(AcqOrderMode.TIME_POS_CHANNEL_SLICE);
+        acqOrderModes_[2] = new AcqOrderMode(AcqOrderMode.POS_TIME_SLICE_CHANNEL);
+        acqOrderModes_[3] = new AcqOrderMode(AcqOrderMode.POS_TIME_CHANNEL_SLICE);
         acqOrderBox_.addItem(acqOrderModes_[0]);
         acqOrderBox_.addItem(acqOrderModes_[1]);
         acqOrderBox_.addItem(acqOrderModes_[2]);
@@ -1583,7 +1636,7 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
             }
         });
 
-        multiButton_ = new JRadioButton("Multi-image files");
+        multiButton_ = new JRadioButton("Image stack file");
         multiButton_.setFont(new Font("Arial", Font.PLAIN, 10));
         multiButton_.setBounds(260, 80, 200, 22);
         savePanel_.add(multiButton_);
@@ -1614,7 +1667,7 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         commentTextArea_.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
 
         // Main buttons
-        final JButton acquireButton = new JButton();
+        final JButton acquireButton = new JButton("Acquire!");
         acquireButton.setMargin(new Insets(-9, -9, -9, -9));
         acquireButton.setFont(new Font("Arial", Font.BOLD, 12));
         acquireButton.addActionListener(new ActionListener()
@@ -1630,7 +1683,6 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
                 runAcquisition();
             }
         });
-        acquireButton.setText("Acquire!");
         acquireButton.setBounds(432, 44, 80, 22);
         add(acquireButton);
 
@@ -1757,14 +1809,63 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
     }
 
     /**
-     * Called when a field's "value" property changes. Causes the Summary to be
-     * updated
+     * Called when a field's "value" property changes.
+     * Causes the Summary to be updated
      */
     public void propertyChange(PropertyChangeEvent e)
     {
         // update summary
         applySettings();
         summaryTextArea_.setText(acqEng_.getVerboseSummary());
+    }
+
+    /**
+     * Sets the exposure time of a given channel
+     * The channel has to be preset in the current channel group
+     * Will also update the exposure associated with this channel in the preferences,
+     * i.e. even if the preset is not shown, this exposure time will be used
+     * next time it is shown
+     * 
+     * @param channelGroup
+     *        - name of the channelgroup. If it does not match the current
+     *        channel group, no action will be taken
+     * @param channel
+     *        - name of the preset in the current channel group
+     * @param exposure
+     *        - new exposure time
+     */
+    public void setChannelExposureTime(String channelGroup, String channel, double exposure)
+    {
+        if (channelGroup.equals(acqEng_.getChannelGroup()))
+        {
+            if (acqEng_.getChannelConfigs().length > 0)
+            {
+                for (String config : acqEng_.getChannelConfigs())
+                {
+                    if (channel.equals(config))
+                    {
+                        exposurePrefs_.putDouble("Exposure_" + acqEng_.getChannelGroup() + "_" + channel, exposure);
+                        model_.setChannelExposureTime(channelGroup, channel, exposure);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns exposure time for the desired preset in the given channelgroup
+     * Acquires its info from the preferences
+     * 
+     * @param channelGroup
+     * @param channel
+     *        -
+     * @param defaultExp
+     *        - default value
+     * @return exposure time
+     */
+    public double getChannelExposureTime(String channelGroup, String channel, double defaultExp)
+    {
+        return exposurePrefs_.getDouble("Exposure_" + channelGroup + "_" + channel, defaultExp);
     }
 
     protected void afOptions()
@@ -1839,6 +1940,7 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         for (Component c : comps)
             for (Component co : ((JPanel) c).getComponents())
                 co.setEnabled(framesEnabled);
+        framesPanel_.repaint();
 
         numFrames_.setValue(acqEng_.getNumFrames());
 
@@ -1857,16 +1959,19 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         acqEng_.enableZSliceSetting(acqPrefs_.getBoolean(ACQ_ENABLE_SLICE_SETTINGS, acqEng_.isZSliceSettingEnabled()));
         acqEng_.enableMultiPosition(acqPrefs_.getBoolean(ACQ_ENABLE_MULTI_POSITION, acqEng_.isMultiPositionEnabled()));
         positionsPanel_.setSelected(acqEng_.isMultiPositionEnabled());
+        positionsPanel_.repaint();
 
         slicesPanel_.setSelected(acqEng_.isZSliceSettingEnabled());
+        slicesPanel_.repaint();
 
         acqEng_.enableChannelsSetting(acqPrefs_.getBoolean(ACQ_ENABLE_MULTI_CHANNEL, false));
         channelsPanel_.setSelected(acqEng_.isChannelsSettingEnabled());
+        channelsPanel_.repaint();
 
         savePanel_.setSelected(acqPrefs_.getBoolean(ACQ_SAVE_FILES, false));
 
         nameField_.setText(acqPrefs_.get(ACQ_DIR_NAME, "Untitled"));
-        // String os_name = System.getProperty("os.name", "");
+
         rootField_.setText(acqPrefs_.get(ACQ_ROOT_NAME, System.getProperty("user.home") + "/AcquisitionData"));
 
         acqEng_.setAcqOrderMode(acqPrefs_.getInt(ACQ_ORDER_MODE, acqEng_.getAcqOrderMode()));
@@ -2250,7 +2355,7 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         if (used + acqTotalBytes > 0.72 * max)
         {
             int selection = JOptionPane.showConfirmDialog(this, "Warning: available RAM may "
-                    + "be insufficent for full acquisition. \nSave images to disk or increase "
+                    + "be insufficient for full acquisition. \nSave images to disk or increase "
                     + "maximum memory by selecting \nEdit--Options--Memory & Threads on ImageJ "
                     + "toolbar. \n\n Would you like to run acquisition anyway?", "Insufficient memory warning",
                     JOptionPane.YES_NO_OPTION);
@@ -2390,8 +2495,8 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
 
         afSkipInterval_.setEnabled(acqEng_.isAutoFocusEnabled());
 
-        // These values need to be cached or we will loose them due to the
-        // Spinners OnChanged methods calling applySetting
+        // These values need to be cached or we will loose them due to the Spinners OnChanged
+        // methods calling applySetting
         Integer numFrames = new Integer(acqEng_.getNumFrames());
         Integer afSkipInterval = new Integer(acqEng_.getAfSkipInterval());
         if (acqEng_.isFramesSettingEnabled())
@@ -2546,7 +2651,7 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
     /**
      * Save settings to application properties.
      */
-    private void saveSettings()
+    public void saveSettings()
     {
         Rectangle r = getBounds();
 
@@ -2647,11 +2752,11 @@ public class AcqControlDlg extends JPanel implements PropertyChangeListener
         }
         zBottom_.setText(NumberUtils.doubleToDisplayString(newBottom));
         zTop_.setText(NumberUtils.doubleToDisplayString(newTop));
+        applySettings();
     }
 
     /**
-     * This method is called from the Options dialog, to set the background
-     * style
+     * This method is called from the Options dialog, to set the background style
      */
     public void setBackgroundStyle(String style)
     {

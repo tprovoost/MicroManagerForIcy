@@ -3,6 +3,9 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/javascripter"/>
+	<classpathentry kind="lib" path="/Icy-App/lib/clojure.jar"/>
 	<classpathentry kind="lib" path="/Icy-App/icy.jar"/>
+	<classpathentry kind="lib" path="/Icy-App/plugins/tprovoost/Microscopy/micromanagerlibs/MicroManagerLibs.jar"/>
 	<classpathentry kind="output" path="bin"/>
+	<referencedentry kind="lib" path="/Icy-App/lib/MMJ_.jar" sourcepath="/mmstudio"/>
 </classpath>

@@ -32,7 +32,7 @@ import org.micromanager.utils.MMScriptException;
  * and a default saving mechanism and connect them to the acqEngine.
  * Alternate setups are possible.
  */
-public class MyTaggedImagePipeline
+public class IcyTaggedImagePipeline
 {
 
     final String acqName_;
@@ -47,13 +47,11 @@ public class MyTaggedImagePipeline
      * -> Sequence
      * Other kinds of pipelines can be set up in this way.
      */
-    public MyTaggedImagePipeline(IAcquisitionEngine2010 acqEngine, SequenceSettings sequenceSettings,
+    public IcyTaggedImagePipeline(IAcquisitionEngine2010 acqEngine, SequenceSettings sequenceSettings,
             List<DataProcessor<TaggedImage>> imageProcessors, ScriptInterface gui, boolean diskCached, boolean display)
             throws ClassNotFoundException, InstantiationException, IllegalAccessException, MMScriptException
     {
-
         // Start up the acquisition engine
-
         BlockingQueue<TaggedImage> taggedImageQueue = acqEngine.run(sequenceSettings);
         summaryMetadata_ = acqEngine.getSummaryMetadata();
 
@@ -89,7 +87,7 @@ public class MyTaggedImagePipeline
                 }
             }
         }
-        imageCache_ = new MMImageCache(new TaggedImageStorageRam(summaryMetadata_));
+        imageCache_ = new MMImageCache(new IcyTaggedImageStorage(summaryMetadata_));
         imageCache_.addImageCacheListener(listener);
 
         // Start pumping images into the ImageCache
